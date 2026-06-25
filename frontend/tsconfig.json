@@ -1,0 +1,113 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "noImplicitThis": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "noUncheckedIndexedAccess": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "allowJs": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@components": [
+                "src/components"
+            ],
+            "@components/*": [
+                "src/components/*"
+            ],
+            "@features": [
+                "src/features"
+            ],
+            "@features/*": [
+                "src/features/*"
+            ],
+            "@services": [
+                "src/services"
+            ],
+            "@services/*": [
+                "src/services/*"
+            ],
+            "@hooks": [
+                "src/hooks"
+            ],
+            "@hooks/*": [
+                "src/hooks/*"
+            ],
+            "@contexts": [
+                "src/contexts"
+            ],
+            "@contexts/*": [
+                "src/contexts/*"
+            ],
+            "@lib": [
+                "src/lib"
+            ],
+            "@lib/*": [
+                "src/lib/*"
+            ],
+            "@types": [
+                "src/types"
+            ],
+            "@types/*": [
+                "src/types/*"
+            ],
+            "@mock": [
+                "src/mock"
+            ],
+            "@mock/*": [
+                "src/mock/*"
+            ],
+            "@routes": [
+                "src/routes"
+            ],
+            "@routes/*": [
+                "src/routes/*"
+            ],
+            "@layouts/*": [
+                "src/layouts/*"
+            ],
+            "@pages": [
+                "src/pages"
+            ],
+            "@pages/*": [
+                "src/pages/*"
+            ],
+            "@config": [
+                "src/config"
+            ],
+            "@config/*": [
+                "src/config/*"
+            ]
+        }
+    },
+    "include": [
+        "src"
+    ],
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+version: 0.2
+
+# buildspec-frontend.yml — Phase 9 CI/CD
+#
+# Deployment stage — runs AFTER manual approval and AFTER BackendDeploy.
+#
+# CDK BucketDeployment (in FrontendStack) is the SINGLE source of truth
+# for S3 asset upload and CloudFront invalidation.
+# This buildspec only:
+#   1. Builds the React/Vite SPA so frontend/dist is fresh.
+#   2. Runs cdk deploy FrontendStack which triggers BucketDeployment,
+#      uploading dist/ + config.json and invalidating /index.html /config.json.
+#
+# Environment variables injected by CicdStack:
+#   CDK_DEFAULT_ACCOUNT — for FrontendStack CDK deploy
+#   CDK_DEFAULT_REGION  — for FrontendStack CDK deploy
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo "=== Installing dependencies ==="
+      - cd infrastructure && npm ci
+      - cd frontend && npm ci
+
+  pre_build:
+    commands:
+      - echo "=== Building React/Vite SPA ==="
+      - cd frontend && npm run build
+      - echo "=== Build output ==="
+      - ls -lh frontend/dist/
+
+  build:
+    commands:
+      - echo "=== Deploying FrontendStack (CDK BucketDeployment uploads dist + config.json) ==="
+      - cd infrastructure && npx cdk deploy FrontendStack --require-approval never --ci
+      - echo "=== FrontendStack deploy complete ==="
+
+  post_build:
+    commands:
+      - echo "=== Frontend deploy complete — $(date) ==="
+
+artifacts:
+  files:
+    - frontend/dist/**/*
+  base-directory: .
+  name: FrontendArtifacts
+
+cache:
+  paths:
+    - frontend/node_modules/**/*

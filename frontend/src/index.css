@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+:root {
+color-scheme: light;
+--radius: 0.5rem;
+--background: 0 0% 100%;
+--foreground: 0 0% 3.6%;
+--card: 0 0% 100%;
+--card-foreground: 0 0% 3.6%;
+--popover: 0 0% 100%;
+--popover-foreground: 0 0% 3.6%;
+--muted: 0 0% 96.1%;
+--muted-foreground: 0 0% 45.1%;
+--accent: 45 93.4% 51.4%;
+--accent-foreground: 0 0% 100%;
+--destructive: 0 84.2% 60.2%;
+--destructive-foreground: 0 0% 100%;
+--border: 0 0% 89.8%;
+--input: 0 0% 89.8%;
+--primary: 45 93.4% 51.4%;
+--primary-foreground: 0 0% 9%;
+--secondary: 217.2 32.6% 17.5%;
+--secondary-foreground: 0 0% 100%;
+--ring: 45 93.4% 51.4%;
+}
+
+html.dark {
+color-scheme: dark;
+--background: 0 0% 3.6%;
+--foreground: 0 0% 98.3%;
+--card: 0 0% 10%;
+--card-foreground: 0 0% 98.3%;
+--popover: 0 0% 10%;
+--popover-foreground: 0 0% 98.3%;
+--muted: 0 0% 14.9%;
+--muted-foreground: 0 0% 63.9%;
+--accent: 45 93.4% 51.4%;
+--accent-foreground: 0 0% 9%;
+--destructive: 0 62.8% 30.6%;
+--destructive-foreground: 0 0% 98.3%;
+--border: 0 0% 14.9%;
+--input: 0 0% 14.9%;
+--primary: 45 93.4% 51.4%;
+--primary-foreground: 0 0% 9%;
+--secondary: 217.2 32.6% 17.5%;
+--secondary-foreground: 0 0% 100%;
+--ring: 45 93.4% 51.4%;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+}
+}
+
+html {
+scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+@apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+@apply bg-muted;
+}
+
+::-webkit-scrollbar-thumb {
+@apply bg-muted-foreground rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+@apply bg-foreground;
+}
+
+/* Selection */
+::selection {
+@apply bg-accent text-accent-foreground;
+}
+
+/* Links */
+a {
+@apply transition-colors hover:text-accent;
+}
+
+/* Focus */
+:focus-visible {
+@apply outline-2 outline-offset-2 outline-accent;
+}
+
+/* Form Elements */
+input,
+textarea,
+select {
+@apply transition-colors;
+}
+
+::placeholder {
+@apply text-muted-foreground;
+}
+
+/* Animations */
+@keyframes fadeIn {
+from {
+opacity: 0;
+}
+to {
+opacity: 1;
+}
+}
+
+@keyframes slideIn {
+from {
+transform: translateX(-10px);
+opacity: 0;
+}
+to {
+transform: translateX(0);
+opacity: 1;
+}
+}
+
+.animate-fade-in {
+animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+animation: slideIn 0.3s ease-out;
+}
+
+/* Loading */
+.skeleton {
+@apply bg-muted animate-pulse;
+}
+
+/* Container */
+.container {
+@apply w-full mx-auto px-4;
+max-width: 1280px;
+}
+
+@media (max-width: 640px) {
+.container {
+@apply px-3;
+}
+}
+
+/* Grid */
+.grid-auto {
+@apply grid gap-4;
+grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (max-width: 640px) {
+.grid-auto {
+grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+}
+
+/* Text */
+.line-clamp-1 {
+@apply overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+/* Custom transition */
+.transition-smooth {
+@apply transition-all duration-200 ease-in-out;
+}
+
+/* Utilities */
+.flex-center {
+@apply flex items-center justify-center;
+}
+
+.flex-between {
+@apply flex items-center justify-between;
+}
+
+.max-container {
+@apply mx-auto;
+max-width: 1280px;
+}
