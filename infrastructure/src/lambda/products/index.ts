@@ -78,15 +78,13 @@ async function listProducts(
         return ok({ items, count: items.length });
     }
 
-    // No category supplied — return all products indexed under CATEGORY#all.
-    // Callers that seed the table should write GSI1PK='CATEGORY#all' on every
-    // product item so this catch-all query works.
+    // No category supplied — return all products via GSI3.
     const { Items = [] } = await db.send(
         new QueryCommand({
             TableName: TABLE_NAME,
-            IndexName: 'GSI1',
-            KeyConditionExpression: 'GSI1PK = :pk',
-            ExpressionAttributeValues: marshall({ ':pk': 'CATEGORY#all' }),
+            IndexName: 'GSI3',
+            KeyConditionExpression: 'GSI3PK = :pk',
+            ExpressionAttributeValues: marshall({ ':pk': 'PRODUCT' }),
         }),
     );
 

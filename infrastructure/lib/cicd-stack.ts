@@ -438,7 +438,7 @@ export class CicdStack extends cdk.Stack {
                             branch: githubBranch,
                             oauthToken: cdk.SecretValue.secretsManager('/ecommerce/github-token'),
                             output: sourceOutput,
-                            trigger: codepipelineActions.GitHubTrigger.WEBHOOK,
+                            trigger: codepipelineActions.GitHubTrigger.POLL,
                         }),
                     ],
                 },

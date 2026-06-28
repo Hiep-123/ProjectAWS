@@ -59,7 +59,6 @@ const Login: React.FC = () => {
                                 id="email"
                                 type="email"
                                 placeholder="name@example.com"
-                                value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="pl-9 h-11"
                                 required
@@ -80,7 +79,6 @@ const Login: React.FC = () => {
                                 id="password"
                                 type="password"
                                 placeholder="••••••••"
-                                value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="pl-9 h-11"
                                 required

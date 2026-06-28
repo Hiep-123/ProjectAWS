@@ -103,6 +103,7 @@ const securityStack = new SecurityStack(app, 'SecurityStack', {
 const frontendStack = new FrontendStack(app, 'FrontendStack', {
   env,
   description: 'Ecommerce platform — S3 + CloudFront (React 19 SPA, Phase 7)',
+  wafWebAclArn: process.env.WAF_WEB_ACL_ARN,
 });
 
 // FrontendStack imports EcommerceApiUrl (ApiStack) + EcommerceWafWebAclArn (SecurityStack)

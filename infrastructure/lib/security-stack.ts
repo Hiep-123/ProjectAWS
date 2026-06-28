@@ -52,7 +52,7 @@ export class SecurityStack extends cdk.Stack {
         // ─────────────────────────────────────────────────────────────────
         const webAcl = new wafv2.CfnWebACL(this, 'EcommerceWebACL', {
             name: 'EcommerceWebACL',
-            description: 'WAF WebACL for Ecommerce CloudFront distribution — Phase 8',
+            description: 'WAF WebACL for Ecommerce CloudFront distribution - Phase 8',
             scope: 'CLOUDFRONT',
 
             // Default action: allow all traffic that doesn't match a BLOCK rule

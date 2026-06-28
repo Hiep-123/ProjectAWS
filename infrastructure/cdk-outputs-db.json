@@ -1,0 +1,11 @@
+{
+  "AuthStack": {
+    "UserPoolClientId": "1g8038olqqhg6psmka7etvc47e",
+    "UserPoolId": "ap-southeast-1_dOmrwNnTw",
+    "CognitoRegion": "ap-southeast-1"
+  },
+  "DatabaseStack": {
+    "TableName": "EcommerceTable",
+    "TableArn": "arn:aws:dynamodb:ap-southeast-1:843109108457:table/EcommerceTable"
+  }
+}

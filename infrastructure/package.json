@@ -5,7 +5,9 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "seed:demo": "ts-node --project tsconfig.json scripts/seed-demo-data.ts",
+    "seed:users": "ts-node --project tsconfig.json scripts/create-demo-users.ts"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.162",
@@ -19,8 +21,11 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.1075.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1075.0",
     "@aws-sdk/client-dynamodb": "^3.1066.0",
     "@aws-sdk/client-eventbridge": "^3.1069.0",
+    "@aws-sdk/lib-dynamodb": "^3.1075.0",
     "@aws-sdk/util-dynamodb": "^3.996.4",
     "aws-cdk-lib": "^2.257.0",
     "constructs": "^10.5.0",

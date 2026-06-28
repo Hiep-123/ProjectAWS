@@ -1,0 +1,20 @@
+{
+  "AuthStack": {
+    "UserPoolClientId": "1g8038olqqhg6psmka7etvc47e",
+    "UserPoolId": "ap-southeast-1_dOmrwNnTw",
+    "CognitoRegion": "ap-southeast-1"
+  },
+  "DatabaseStack": {
+    "TableName": "EcommerceTable",
+    "TableArn": "arn:aws:dynamodb:ap-southeast-1:843109108457:table/EcommerceTable"
+  },
+  "EventStack": {
+    "EventBusName": "EcommerceEventBus",
+    "OrderQueueName": "EcommerceOrderQueue",
+    "OrderProcessorFunctionName": "OrderProcessorFunction",
+    "OrderDLQName": "EcommerceOrderDLQ",
+    "OrderQueueUrl": "https://sqs.ap-southeast-1.amazonaws.com/843109108457/EcommerceOrderQueue",
+    "OrderDLQUrl": "https://sqs.ap-southeast-1.amazonaws.com/843109108457/EcommerceOrderDLQ",
+    "EventBusArn": "arn:aws:events:ap-southeast-1:843109108457:event-bus/EcommerceEventBus"
+  }
+}

@@ -12,7 +12,7 @@ export const APP_DESCRIPTION = 'Production-ready E-Commerce Platform powered by 
 //           2. VITE_API_URL (set at build time via .env for local dev)
 //           3. '' — surfaces as a network error, never silently calls wrong endpoint
 export const API_BASE_URL: string =
-    (window as Window & { __RUNTIME_API_URL__?: string }).__RUNTIME_API_URL__ ||
+    window.__RUNTIME_API_URL__ ||
     import.meta.env['VITE_API_URL'] ||
     ''
 export const API_TIMEOUT = 30000

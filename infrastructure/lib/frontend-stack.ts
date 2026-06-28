@@ -40,16 +40,25 @@ import * as path from 'path';
  *
  * Cross-stack imports (Fn.importValue — no CDK graph dependency):
  *   EcommerceApiUrl  ← ApiStack
+ *   UserPoolId       ← AuthStack  (Phase 10 — injected into config.json)
+ *   UserPoolClientId ← AuthStack  (Phase 10 — injected into config.json)
+ *   CognitoRegion    ← AuthStack  (Phase 10 — injected into config.json)
  *
  * Exports:
  *   FrontendBucketName
  *   CloudFrontDistributionId
  *   CloudFrontDomainName
  */
+export interface FrontendStackProps extends cdk.StackProps {
+    /** WAF WebACL ARN from SecurityStack (us-east-1). Passed as prop because
+     *  Fn.importValue does NOT work cross-region. */
+    wafWebAclArn?: string;
+}
+
 export class FrontendStack extends cdk.Stack {
     public readonly distributionDomainName: string;
 
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props?: FrontendStackProps) {
         super(scope, id, props);
 
         // ─────────────────────────────────────────────────────────────────
@@ -57,7 +66,13 @@ export class FrontendStack extends cdk.Stack {
         // ─────────────────────────────────────────────────────────────────
         const apiUrl = cdk.Fn.importValue('EcommerceApiUrl');
         // Phase 8 — WAF WebACL ARN from SecurityStack (us-east-1)
-        const wafWebAclArn = cdk.Fn.importValue('EcommerceWafWebAclArn');
+        // Fn.importValue does NOT work cross-region; ARN is passed as a stack prop
+        // read from WAF_WEB_ACL_ARN env var (set after SecurityStack deploy).
+        const wafWebAclArn = props?.wafWebAclArn ?? '';
+        // Phase 10 — Cognito config injected into runtime config.json
+        const userPoolId = cdk.Fn.importValue('UserPoolId');
+        const userPoolClientId = cdk.Fn.importValue('UserPoolClientId');
+        const cognitoRegion = cdk.Fn.importValue('CognitoRegion');
 
         // ─────────────────────────────────────────────────────────────────
         // S3 — FrontendBucket
@@ -231,9 +246,14 @@ export class FrontendStack extends cdk.Stack {
                 s3deploy.Source.asset(
                     path.join(__dirname, '../../frontend/dist'),
                 ),
-                // 2. Runtime config — injects API URL without rebuilding the bundle
+                // 2. Runtime config — injects API URL and Cognito config without rebuilding
                 s3deploy.Source.jsonData('config.json', {
                     apiUrl: apiUrl,
+                    cognito: {
+                        userPoolId: userPoolId,
+                        clientId: userPoolClientId,
+                        region: cognitoRegion,
+                    },
                 }),
             ],
             destinationBucket: bucket,

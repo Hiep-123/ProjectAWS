@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Root .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Environment variable files — NEVER commit .env files with real credentials
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+infrastructure/.env
+infrastructure/.env.local
+infrastructure/.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db

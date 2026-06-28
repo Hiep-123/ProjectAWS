@@ -1,0 +1,7 @@
+{
+  "SecurityStack": {
+    "WafWebAclId": "528561aa-7c4c-40db-81b0-c0084742ce78",
+    "WafWebAclArn": "arn:aws:wafv2:us-east-1:843109108457:global/webacl/EcommerceWebACL/528561aa-7c4c-40db-81b0-c0084742ce78",
+    "WafLogGroupName": "aws-waf-logs-ecommerce"
+  }
+}
