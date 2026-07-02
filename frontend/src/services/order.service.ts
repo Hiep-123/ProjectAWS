@@ -64,7 +64,10 @@ const toOrder = (raw: LambdaOrder): Order => ({
         total: i.price * i.quantity,
         image: '',
     })),
-    status: raw.status as OrderStatus,
+    // Fix 3 — normalize backend UPPER_CASE statuses to frontend Title-Case.
+    // Backend:  PENDING → PROCESSING → COMPLETED → FAILED
+    // Frontend: Pending → Processing → Delivered  → Cancelled
+    status: normalizeOrderStatus(raw.status),
     totalAmount: raw.totalAmount,
     subtotal: raw.totalAmount,
     tax: 0,
@@ -102,6 +105,34 @@ const toOrder = (raw: LambdaOrder): Order => ({
         new Date(raw.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000,
     ).toISOString(),
 })
+
+/**
+ * normalizeOrderStatus — maps backend UPPER_CASE values to frontend Title-Case.
+ *
+ * Backend DynamoDB stores: PENDING | PROCESSING | COMPLETED | FAILED
+ * Frontend OrderStatus type: Pending | Processing | Delivered | Cancelled
+ *
+ * Already-normalized frontend values are passed through unchanged so the
+ * function is safe to call on both raw Lambda responses and mock data.
+ */
+function normalizeOrderStatus(status: string): OrderStatus {
+    const map: Record<string, OrderStatus> = {
+        // Backend → frontend
+        PENDING: 'Pending',
+        PROCESSING: 'Processing',
+        COMPLETED: 'Delivered',
+        FAILED: 'Cancelled',
+        // Pass-through for already-normalized values (mock data, cached state)
+        Pending: 'Pending',
+        Processing: 'Processing',
+        Delivered: 'Delivered',
+        Cancelled: 'Cancelled',
+        'Inventory Updated': 'Inventory Updated',
+        'Email Sent': 'Email Sent',
+        Shipped: 'Shipped',
+    }
+    return map[status] ?? 'Pending'
+}
 
 export const orderService = {
     // ── GET /orders ────────────────────────────────────────────────────────
@@ -176,6 +207,11 @@ export const orderService = {
             return newOrder
         }
 
+        // Fix 2 — Lambda returns HTTP 202 with a minimal { message, orderId, status }
+        // payload, not a full LambdaOrder. We POST the order, extract the orderId
+        // from the 202 response, then immediately GET /orders/{orderId} to obtain
+        // the full persisted order object.
+
         // Lambda expects: { items: [{productId, quantity, price}], shippingAddress }
         const payload = {
             items: checkout.items.map((i: any) => ({
@@ -195,8 +231,38 @@ export const orderService = {
                     ].join(', '),
         }
 
-        const { data } = await api.post<LambdaOrder>('/orders', payload)
-        return toOrder(data)
+        // Step 1: POST /orders → 202 { message, orderId, status: 'PENDING' }
+        const { data: created } = await api.post<{ message: string; orderId: string; status: string }>(
+            '/orders',
+            payload,
+        )
+        const orderId = created.orderId
+
+        // Step 2: GET /orders/{orderId} → full LambdaOrder from DynamoDB
+        try {
+            const { data: fullOrder } = await api.get<LambdaOrder>(`/orders/${orderId}`)
+            return toOrder(fullOrder)
+        } catch {
+            // Fallback: the GET may fail transiently if the Lambda hasn't
+            // finished writing to DynamoDB yet (very unlikely — PutItem happens
+            // before the 202 is returned — but safe to handle).
+            const now = new Date().toISOString()
+            const fallbackShipping = payload.shippingAddress
+            return toOrder({
+                orderId,
+                userId: '',
+                items: payload.items,
+                shippingAddress: fallbackShipping,
+                totalAmount: payload.items.reduce(
+                    (sum: number, i: { price: number; quantity: number }) =>
+                        sum + i.price * i.quantity,
+                    0,
+                ),
+                status: 'PENDING',
+                createdAt: now,
+                updatedAt: now,
+            })
+        }
     },
 
     // ── Status update & cancel (mock-only — backend is immutable for now) ─

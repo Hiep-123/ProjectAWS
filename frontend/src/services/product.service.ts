@@ -24,8 +24,63 @@ const simulateDelay = () =>
 
 // ─── Shape returned by the Lambda ────────────────────────────────────────────
 interface LambdaProductListResponse {
-    items: Product[]
+    items: LambdaProduct[]
     count: number
+}
+
+// Raw DynamoDB item shape from ProductServiceFunction.
+// Seed data writes `productId` and `imageUrl`; frontend needs `id` and `image`.
+interface LambdaProduct {
+    productId?: string
+    id?: string
+    name: string
+    description: string
+    price: number
+    originalPrice?: number
+    category: string
+    imageUrl?: string
+    image?: string
+    images?: string[]
+    stock: number
+    rating?: number
+    reviews?: number
+    sku?: string
+    tags?: string[]
+    featured?: boolean
+    isNew?: boolean
+    status?: 'active' | 'inactive' | 'discontinued'
+    createdAt?: string
+    updatedAt?: string
+    // DynamoDB table key fields — present in raw response, ignored by frontend
+    PK?: string
+    SK?: string
+    GSI1PK?: string
+    GSI1SK?: string
+    GSI3PK?: string
+    GSI3SK?: string
+}
+
+/**
+ * normalizeProduct — maps raw Lambda/DynamoDB item → frontend Product type.
+ *
+ * Handles two field mismatches:
+ *   productId → id      (DynamoDB seed uses productId; frontend type uses id)
+ *   imageUrl  → image   (DynamoDB seed uses imageUrl; frontend type uses image)
+ *
+ * Preserves original fields so downstream code is not broken if it already
+ * reads productId or imageUrl directly.
+ */
+function normalizeProduct(raw: LambdaProduct): import('@types').Product {
+    return {
+        ...raw,
+        // id: prefer explicit id, fall back to productId
+        id: raw.id ?? raw.productId ?? '',
+        // image: prefer explicit image, fall back to imageUrl
+        image: raw.image ?? raw.imageUrl ?? '',
+        // numeric defaults for fields not stored in DynamoDB
+        rating: raw.rating ?? 0,
+        reviews: raw.reviews ?? 0,
+    } as import('@types').Product
 }
 
 export const productService = {
@@ -58,7 +113,7 @@ export const productService = {
         })
 
         return {
-            data: data.items,
+            data: data.items.map(normalizeProduct),
             total: data.count,
             page: params.page ?? 1,
             pageSize: params.pageSize ?? data.count,
@@ -74,8 +129,8 @@ export const productService = {
             return product
         }
 
-        const { data } = await api.get<Product>(`/products/${id}`)
-        return data
+        const { data } = await api.get<LambdaProduct>(`/products/${id}`)
+        return normalizeProduct(data)
     },
 
     // ── Related products (mock-only — no backend endpoint yet) ────────────

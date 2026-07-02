@@ -15,7 +15,6 @@ import {
     db,
     TABLE_NAME,
     GetItemCommand,
-    PutItemCommand,
     UpdateItemCommand,
     DeleteItemCommand,
     QueryCommand,
@@ -102,7 +101,35 @@ async function addToCart(
     if (price == null || price < 0) return badRequest('price must be a non-negative number');
 
     const now = new Date().toISOString();
-    const item = {
+
+    // Use UpdateItem with ADD so that repeated "Add to cart" calls increment
+    // quantity rather than overwriting the item.  If the item does not exist yet,
+    // ADD initialises the quantity to the incoming value (DynamoDB behaviour).
+    // `price`, `updatedAt`, and the static fields are SET unconditionally so
+    // the first call also writes them correctly.
+    const { Attributes } = await db.send(
+        new UpdateItemCommand({
+            TableName: TABLE_NAME,
+            Key: marshall({ PK: `USER#${userId}`, SK: `CART#${productId}` }),
+            UpdateExpression:
+                'SET userId = if_not_exists(userId, :uid), ' +
+                'productId = if_not_exists(productId, :pid), ' +
+                'price = :price, ' +
+                'createdAt = if_not_exists(createdAt, :now), ' +
+                'updatedAt = :now ' +
+                'ADD quantity :qty',
+            ExpressionAttributeValues: marshall({
+                ':uid': userId,
+                ':pid': productId,
+                ':price': price,
+                ':qty': quantity,
+                ':now': now,
+            }),
+            ReturnValues: 'ALL_NEW',
+        }),
+    );
+
+    const updatedItem = Attributes ? unmarshall(Attributes) : {
         PK: `USER#${userId}`,
         SK: `CART#${productId}`,
         userId,
@@ -113,14 +140,7 @@ async function addToCart(
         updatedAt: now,
     };
 
-    await db.send(
-        new PutItemCommand({
-            TableName: TABLE_NAME,
-            Item: marshall(item),
-        }),
-    );
-
-    return created(item);
+    return created(updatedItem);
 }
 
 async function updateCart(

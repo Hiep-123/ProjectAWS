@@ -99,24 +99,6 @@ const Login: React.FC = () => {
                 </div>
 
                 <Separator />
-
-                <div className="rounded-xl bg-muted/40 p-4 border border-border/30 text-xs font-semibold">
-                    <p className="text-foreground font-bold mb-1.5 text-center uppercase tracking-wider">Cognito Demo Credentials</p>
-                    <div className="space-y-1 font-mono text-[10px] text-muted-foreground">
-                        <div className="flex justify-between">
-                            <span>User Email:</span>
-                            <span className="text-foreground">john@example.com</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Admin Email:</span>
-                            <span className="text-foreground">admin@example.com</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Password:</span>
-                            <span className="text-foreground">password</span>
-                        </div>
-                    </div>
-                </div>
             </CardContent>
         </Card>
     )

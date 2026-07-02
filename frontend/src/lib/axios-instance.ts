@@ -110,9 +110,16 @@ api.interceptors.response.use(
 export const handleApiError = (error: unknown): ApiError => {
     if (axios.isAxiosError(error)) {
         const data = error.response?.data as Record<string, unknown> | undefined
+        // Fix 4 — backend returns { error: string }, frontend previously read
+        // data.message only. Now reads data.message || data.error || fallback.
+        const message =
+            (data?.['message'] as string | undefined) ??
+            (data?.['error'] as string | undefined) ??
+            error.message ??
+            'An error occurred'
         return {
             code: error.response?.status?.toString() ?? 'UNKNOWN_ERROR',
-            message: (data?.['message'] as string) ?? error.message ?? 'An error occurred',
+            message,
             details: data,
             timestamp: new Date().toISOString(),
         }

@@ -418,7 +418,8 @@ export class CicdStack extends cdk.Stack {
         //   Source → BackendTest → FrontendTest
         //     → ManualApproval → BackendDeploy → FrontendDeploy
         //
-        // BackendTest and FrontendTest run in parallel (same stage, runOrder 1).
+        // BackendTest runs first (runOrder 1), then FrontendTest (runOrder 2) — sequential
+        // to avoid "Cannot have more than 0 builds in queue" on accounts with low concurrency limits.
         // ManualApproval blocks until a human approves in the AWS console.
         // ─────────────────────────────────────────────────────────────────
         const pipeline = new codepipeline.Pipeline(this, 'EcommercePipeline', {
@@ -443,7 +444,7 @@ export class CicdStack extends cdk.Stack {
                     ],
                 },
 
-                // ── Stage 2: Test (backend + frontend run in parallel) ────
+                // ── Stage 2: Test (backend first, then frontend — sequential) ────
                 {
                     stageName: 'Test',
                     actions: [
@@ -459,7 +460,7 @@ export class CicdStack extends cdk.Stack {
                             project: frontendTestProject,
                             input: sourceOutput,
                             outputs: [frontendTestOutput],
-                            runOrder: 1,  // same runOrder = parallel
+                            runOrder: 2,  // runs after Backend_Test (sequential, avoids CodeBuild queue limit)
                         }),
                     ],
                 },

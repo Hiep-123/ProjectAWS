@@ -6,8 +6,9 @@ import StatusBadge from '@components/shared/StatusBadge'
 import LoadingSpinner from '@components/shared/LoadingSpinner'
 import ConfirmDialog from '@components/shared/ConfirmDialog'
 import { Button, Card, CardContent, CardHeader, CardTitle, Separator } from '@components/ui'
-import { Calendar, DollarSign, Package, MapPin, CreditCard, ArrowLeft, Ban, AlertCircle } from 'lucide-react'
+import { Calendar, DollarSign, Package, MapPin, CreditCard, ArrowLeft, Ban, AlertCircle, RefreshCw } from 'lucide-react'
 import { formatCurrency } from '@lib/utils'
+import { ENV } from '@config/env'
 
 const OrderDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>()
@@ -85,7 +86,18 @@ const OrderDetailPage: React.FC = () => {
                         <CardHeader>
                             <CardTitle className="text-lg font-bold flex items-center justify-between">
                                 <span>Order Lifecycle Events</span>
-                                <StatusBadge status={order.status} />
+                                <div className="flex items-center gap-2">
+                                    {/* Live polling indicator — only shown when mocks are off and order is not terminal */}
+                                    {!ENV.ENABLE_MOCKS &&
+                                        order.status !== 'Delivered' &&
+                                        order.status !== 'Cancelled' && (
+                                            <span className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 animate-pulse">
+                                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                                Live
+                                            </span>
+                                        )}
+                                    <StatusBadge status={order.status} />
+                                </div>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-2">
@@ -101,11 +113,10 @@ const OrderDetailPage: React.FC = () => {
                                         {timeline?.map((event, idx) => (
                                             <div key={idx} className="relative group">
                                                 {/* Bullet */}
-                                                <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 bg-background transition-colors ${
-                                                    event.status === order.status
-                                                        ? 'border-primary bg-primary animate-pulse'
-                                                        : 'border-primary bg-primary/40'
-                                                }`} />
+                                                <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 bg-background transition-colors ${event.status === order.status
+                                                    ? 'border-primary bg-primary animate-pulse'
+                                                    : 'border-primary bg-primary/40'
+                                                    }`} />
 
                                                 <div className="space-y-1 text-xs">
                                                     <div className="flex items-center justify-between gap-4">

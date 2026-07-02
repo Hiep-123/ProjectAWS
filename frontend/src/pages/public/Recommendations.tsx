@@ -29,17 +29,20 @@ const RecommendationsPage: React.FC = () => {
             let matches: string[] = []
 
             if (query.includes('travel') || query.includes('coffee') || query.includes('remote') || query.includes('portable')) {
-                rationale = 'AWS Bedrock analyzed your intent for portable, coffee-shop and travel workspace setup. We selected lightweight accessories, wireless connectivity, and noise isolation items from our catalog.'
-                matches = ['prod-2', 'prod-3', 'prod-5']
+                rationale = 'AWS Bedrock analyzed your intent for portable, coffee-shop and travel workspace setup. We selected lightweight laptops, wireless accessories, and noise isolation audio products from our catalog.'
+                matches = ['prod-laptop-002', 'prod-audio-001', 'prod-acc-001']
             } else if (query.includes('music') || query.includes('sound') || query.includes('audio') || query.includes('listen')) {
-                rationale = 'AWS Bedrock detected high interest in high-fidelity acoustics. We selected premium audio accessories, active noise cancellation headphones, and comfortable listening products.'
-                matches = ['prod-3', 'prod-4']
+                rationale = 'AWS Bedrock detected high interest in high-fidelity acoustics. We selected premium headphones with ANC and true wireless earbuds for immersive listening experiences.'
+                matches = ['prod-audio-001', 'prod-audio-002']
             } else if (query.includes('premium') || query.includes('expensive') || query.includes('best') || query.includes('luxury')) {
-                rationale = 'AWS Bedrock personalized your results targeting high-end premium specs and high customer ratings.'
-                matches = ['prod-1', 'prod-3', 'prod-6']
+                rationale = 'AWS Bedrock personalized your results targeting high-end premium specs and top customer ratings across laptops, phones, and gaming.'
+                matches = ['prod-laptop-003', 'prod-phone-003', 'prod-game-001']
+            } else if (query.includes('gaming') || query.includes('game') || query.includes('play') || query.includes('fps')) {
+                rationale = 'AWS Bedrock identified gaming intent. We selected a gaming console, high-DPI gaming mouse, and a high-performance gaming laptop.'
+                matches = ['prod-game-001', 'prod-game-002', 'prod-laptop-003']
             } else {
-                rationale = `AWS Bedrock mapped prompt "${prompt}" against core features and extracted general convenience electronics & gear.`
-                matches = ['prod-1', 'prod-2', 'prod-4']
+                rationale = `AWS Bedrock mapped prompt "${prompt}" against core features and extracted general convenience electronics and productivity gear.`
+                matches = ['prod-laptop-001', 'prod-phone-001', 'prod-acc-002']
             }
 
             setBedrockReason(rationale)
@@ -119,6 +122,12 @@ const RecommendationsPage: React.FC = () => {
                                 className="w-full text-left p-2.5 rounded-lg border text-xs font-semibold hover:bg-muted/50 transition-colors"
                             >
                                 "high quality music audio setup"
+                            </button>
+                            <button
+                                onClick={() => setPrompt('best gaming setup for FPS')}
+                                className="w-full text-left p-2.5 rounded-lg border text-xs font-semibold hover:bg-muted/50 transition-colors"
+                            >
+                                "best gaming setup for FPS"
                             </button>
                         </CardContent>
                     </Card>
