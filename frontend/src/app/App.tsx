@@ -6,6 +6,7 @@ import { CartProvider } from '@contexts'
 import { ThemeProvider } from '@contexts'
 import Routes from '@routes'
 import ErrorBoundary from '@components/shared/ErrorBoundary'
+import { Toaster } from '@components/ui/toaster'
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -30,6 +31,7 @@ const App: React.FC = () => {
                         <CartProvider>
                             <BrowserRouter>
                                 <Routes />
+                                <Toaster />
                             </BrowserRouter>
                         </CartProvider>
                     </AuthProvider>

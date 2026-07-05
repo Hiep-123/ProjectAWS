@@ -8,46 +8,11 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 
 /**
- * FrontendStack  —  Phase 7
+ * FrontendStack — S3 + CloudFront SPA deployment
  *
- * Deploys the React 19 + Vite SPA to S3 + CloudFront.
- *
- * Architecture:
- *   Browser → CloudFront (HTTPS, HTTP/2+3, PRICE_CLASS_200)
- *               ├── Origin: S3 FrontendBucket (private, OAC)
- *               ├── Default root: index.html
- *               ├── SPA fallback: 403/404 → /index.html (React Router)
- *               └── Security headers: ResponseHeadersPolicy.SECURITY_HEADERS
- *
- * S3:
- *   - Block all public access
- *   - S3_MANAGED encryption
- *   - Versioning enabled
- *   - CloudFront OAC is the ONLY reader (no bucket policy public access)
- *
- * CloudFront:
- *   - Origin Access Control (OAC) — NOT legacy OAI
- *   - HTTP → HTTPS redirect
- *   - Gzip + Brotli compression
- *   - HTTP/2 + HTTP/3 (HTTP2_AND_3)
- *   - PRICE_CLASS_200 (US, EU, Israel)
- *   - Managed security headers policy
- *   - Phase 8: WAF WebACL attached (managed rules + rate limiting)
- *
- * Deployment:
- *   - aws-s3-deployment uploads frontend/dist to S3
- *   - CloudFront cache invalidation triggered automatically
- *
- * Cross-stack imports (Fn.importValue — no CDK graph dependency):
- *   EcommerceApiUrl  ← ApiStack
- *   UserPoolId       ← AuthStack  (Phase 10 — injected into config.json)
- *   UserPoolClientId ← AuthStack  (Phase 10 — injected into config.json)
- *   CognitoRegion    ← AuthStack  (Phase 10 — injected into config.json)
- *
- * Exports:
- *   FrontendBucketName
- *   CloudFrontDistributionId
- *   CloudFrontDomainName
+ * Deploys the React 19 + Vite SPA to a private S3 bucket served via CloudFront (OAC).
+ * WAF WebACL ARN passed as a prop because Fn.importValue doesn't work cross-region.
+ * Cognito config and API URL injected into /config.json at deploy time (no bundle rebuild needed).
  */
 export interface FrontendStackProps extends cdk.StackProps {
     /** WAF WebACL ARN from SecurityStack (us-east-1). Passed as prop because
@@ -65,16 +30,14 @@ export class FrontendStack extends cdk.Stack {
         // Cross-stack imports
         // ─────────────────────────────────────────────────────────────────
         const apiUrl = cdk.Fn.importValue('EcommerceApiUrl');
-        // Phase 8 — WAF WebACL ARN from SecurityStack (us-east-1)
-        // Fn.importValue does NOT work cross-region; ARN is passed as a stack prop
-        // read from WAF_WEB_ACL_ARN env var (set after SecurityStack deploy).
+        // WAF WebACL ARN from SecurityStack (us-east-1).
+        // Fn.importValue does NOT work cross-region — passed as stack prop from WAF_WEB_ACL_ARN env var.
         const wafWebAclArn = props?.wafWebAclArn ?? '';
-        // Phase 10 — Cognito config injected into runtime config.json
+        // Cognito config injected into runtime config.json at deploy time
         const userPoolId = cdk.Fn.importValue('UserPoolId');
         const userPoolClientId = cdk.Fn.importValue('UserPoolClientId');
         const cognitoRegion = cdk.Fn.importValue('CognitoRegion');
 
-        // ─────────────────────────────────────────────────────────────────
         // S3 — FrontendBucket
         //
         // Security requirements:
@@ -82,7 +45,7 @@ export class FrontendStack extends cdk.Stack {
         //   • encryption: S3_MANAGED (SSE-S3)
         //   • versioned: true — enables rollback of deployments
         //   • CloudFront OAC is granted read via bucket policy (below)
-        // ─────────────────────────────────────────────────────────────────
+
         const bucket = new s3.Bucket(this, 'FrontendBucket', {
             bucketName: `ecommerce-frontend-${this.account}-${this.region}`,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -95,19 +58,16 @@ export class FrontendStack extends cdk.Stack {
             enforceSSL: true,
         });
 
-        // ─────────────────────────────────────────────────────────────────
         // CloudFront Origin Access Control (OAC)
         //
         // OAC supersedes legacy OAI — uses SigV4 signing for all S3 requests.
         // The distribution's service principal is granted s3:GetObject below.
-        // ─────────────────────────────────────────────────────────────────
         const oac = new cloudfront.S3OriginAccessControl(this, 'FrontendOAC', {
             originAccessControlName: 'EcommerceFrontendOAC',
             description: 'OAC for EcommerceFrontend S3 bucket — read-only',
             signing: cloudfront.Signing.SIGV4_NO_OVERRIDE,
         });
 
-        // ─────────────────────────────────────────────────────────────────
         // CloudFront Response Headers Policy
         //
         // AWS managed policy (ID: 67f7725c-6f97-4210-82d7-5512b31e9d03)
@@ -117,7 +77,6 @@ export class FrontendStack extends cdk.Stack {
         //   X-Frame-Options            (SAMEORIGIN)
         //   X-XSS-Protection           (1; mode=block)
         //   Referrer-Policy            (strict-origin-when-cross-origin)
-        // ─────────────────────────────────────────────────────────────────
         const securityHeadersPolicy = cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS;
 
         // ─────────────────────────────────────────────────────────────────
@@ -128,7 +87,6 @@ export class FrontendStack extends cdk.Stack {
             { originAccessControl: oac },
         );
 
-        // ─────────────────────────────────────────────────────────────────
         // CloudFront Distribution
         //
         // SPA routing: 403 + 404 → /index.html with HTTP 200
@@ -140,13 +98,12 @@ export class FrontendStack extends cdk.Stack {
         //   /assets/*  — CachingOptimized (long TTL, Vite content-hashed files)
         //   default    — CACHING_DISABLED for index.html + config.json so users
         //                always get the latest SPA shell after a deployment
-        // ─────────────────────────────────────────────────────────────────
         const distribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
-            comment: 'Ecommerce platform — React SPA (Phase 7)',
+            comment: 'Ecommerce platform — React SPA',
 
             defaultRootObject: 'index.html',
 
-            // Phase 8 — WAF WebACL (managed rules + rate limiting)
+            // WAF WebACL (managed rules + rate limiting)
             webAclId: cdk.Token.asString(wafWebAclArn),
 
             // HTTP → HTTPS redirect

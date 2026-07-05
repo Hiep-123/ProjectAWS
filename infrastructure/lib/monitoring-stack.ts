@@ -3,36 +3,14 @@ import { Construct } from 'constructs';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as sns from 'aws-cdk-lib/aws-sns';
+import * as snsSubscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 
 /**
- * MonitoringStack  —  Phase 6 Observability  (hardened)
+ * MonitoringStack — CloudWatch observability
  *
- * Dashboard — EcommerceDashboard
- *   Row 1  API Gateway      — Requests, 5XX Errors
- *   Row 2  EventBridge      — Rule invocations (MatchedEvents)
- *   Row 3  OrderService     — Invocations, Errors, Throttles, Duration p99
- *   Row 4  OrderProcessor   — Invocations, Errors, Throttles, Duration p99
- *   Row 5  SQS              — OrderQueue depth, DLQ depth
- *
- * Alarms
- *   1.  OrderProcessor Errors   > 0  (NOT_BREACHING)
- *   2.  OrderService Errors     > 0  (NOT_BREACHING)
- *   3.  DLQ Messages            > 0  (NOT_BREACHING)
- *   4.  API Gateway 5XX         > 5  (NOT_BREACHING)
- *   5.  OrderProcessor Throttles > 0 (NOT_BREACHING)
- *   6.  OrderService Throttles  > 0  (NOT_BREACHING)
- *
- * All resource names imported via Fn.importValue — deploys independently.
- *
- * Cross-stack imports:
- *   EcommerceOrderProcessorFunctionName  ← EventStack
- *   EcommerceOrderQueueName              ← EventStack
- *   EcommerceOrderDLQName                ← EventStack
- *   EcommerceEventBusName                ← EventStack
- *
- * Exports:
- *   EcommerceDashboardName
- *   EcommerceAlarmsTopicArn
+ * Dashboard: EcommerceDashboard (5 rows — API Gateway, EventBridge, OrderService, OrderProcessor, SQS)
+ * Alarms (6): Lambda errors, Lambda throttles, DLQ depth, API Gateway 5XX
+ * All resource names imported via Fn.importValue.
  */
 export class MonitoringStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -53,6 +31,28 @@ export class MonitoringStack extends cdk.Stack {
             topicName: 'EcommerceAlarmsTopic',
             displayName: 'Ecommerce Platform Alarms',
         });
+
+        // ── Email subscription ────────────────────────────────────────────
+        // ALERT_EMAIL is read from the environment at CDK synth/deploy time.
+        // After deployment, AWS SNS will send a confirmation email to this
+        // address. The subscriber MUST click the confirmation link — until
+        // then, SNS accepts alarm messages but does not forward them.
+        //
+        // If ALERT_EMAIL is not set, the subscription is skipped and a
+        // CDK warning is printed. Alarms still fire and the SNS topic
+        // still receives messages; they are just not delivered to email.
+        const alertEmail = process.env['ALERT_EMAIL'];
+        if (alertEmail) {
+            alarmTopic.addSubscription(
+                new snsSubscriptions.EmailSubscription(alertEmail),
+            );
+        } else {
+            cdk.Annotations.of(this).addWarning(
+                'ALERT_EMAIL environment variable is not set. ' +
+                'CloudWatch alarm notifications will NOT be delivered by email. ' +
+                'Set ALERT_EMAIL in infrastructure/.env and redeploy MonitoringStack.',
+            );
+        }
 
         const alarmAction = new cloudwatchActions.SnsAction(alarmTopic);
 

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@contexts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input } from '@components/ui'
 import { useToast } from '@hooks/use-toast'
-import { Mail, Lock, UserPlus, ShieldAlert, User } from 'lucide-react'
+import { Mail, Lock, UserPlus, ShieldAlert, User, Eye, EyeOff } from 'lucide-react'
 
 const Register: React.FC = () => {
     const navigate = useNavigate()
@@ -15,6 +15,8 @@ const Register: React.FC = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -127,13 +129,21 @@ const Register: React.FC = () => {
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 id="password"
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="pl-9 h-11 text-xs"
+                                className="pl-9 pr-10 h-11 text-xs"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 
@@ -143,13 +153,21 @@ const Register: React.FC = () => {
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 id="confirmPassword"
-                                type="password"
+                                type={showConfirmPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="pl-9 h-11 text-xs"
+                                className="pl-9 pr-10 h-11 text-xs"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(v => !v)}
+                                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 

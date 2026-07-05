@@ -8,11 +8,8 @@ import { Address } from './user'
 export type OrderStatus =
     | 'Pending'
     | 'Processing'
-    | 'Inventory Updated'
-    | 'Email Sent'
-    | 'Shipped'
     | 'Delivered'
-    | 'Cancelled'
+    | 'Cancelled'           // legacy — kept for old mock data backward compat
 
 export interface OrderItem {
     productId: string

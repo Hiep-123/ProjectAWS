@@ -1,11 +1,3 @@
-/**
- * src/events/order-completed.ts
- *
- * Contract for the OrderCompleted domain event.
- * Published by OrderProcessorFunction after the order status is
- * successfully updated to COMPLETED in DynamoDB.
- */
-
 import type { DomainEvent } from './types';
 
 export interface OrderCompletedPayload {
@@ -17,9 +9,7 @@ export interface OrderCompletedPayload {
 
 export type OrderCompletedEvent = DomainEvent<'OrderCompleted', OrderCompletedPayload>;
 
-export function buildOrderCompletedEvent(
-    payload: OrderCompletedPayload,
-): OrderCompletedEvent {
+export function buildOrderCompletedEvent(payload: OrderCompletedPayload): OrderCompletedEvent {
     return {
         eventType: 'OrderCompleted',
         version: '1',

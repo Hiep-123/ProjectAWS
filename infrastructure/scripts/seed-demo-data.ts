@@ -1,8 +1,6 @@
 /**
- * seed-demo-data.ts — Phase 10A Demo Seed Script
- *
- * Idempotent: uses PutCommand so re-running overwrites the same items safely.
- * Does NOT delete or truncate the table.
+ * Seeds the demo product catalog into DynamoDB.
+ * Re-running the script safely overwrites the same items.
  *
  * Single-table schema:
  *   PK  = PRODUCT#{productId}
@@ -66,7 +64,12 @@ const dynamo = DynamoDBDocumentClient.from(
 const now = new Date().toISOString();
 
 function normalize(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Generate a URL-friendly slug from the product name. */
+function toSlug(name: string): string {
+    return normalize(name);
 }
 
 interface ProductSeed {
@@ -231,10 +234,6 @@ async function seed(): Promise<void> {
             GSI1PK: `CATEGORY#${product.category}`,
             GSI1SK: `PRODUCT#${product.productId}`,
 
-            // GSI1 also used for CATEGORY#all (catch-all query in ProductService)
-            // We write a second entry only if the code uses CATEGORY#all.
-            // For now, the frontend can filter by specific category or use GSI3 for all.
-
             // GSI3 — all products listing
             GSI3PK: 'PRODUCT',
             GSI3SK: `NAME#${normalize(product.name)}`,
@@ -247,6 +246,10 @@ async function seed(): Promise<void> {
             price: product.price,
             stock: product.stock,
             imageUrl: product.imageUrl,
+            // Slug for user-friendly URLs — derived from the product name.
+            // e.g. "ProBook X15 Laptop" → "probook-x15-laptop"
+            // GET /products/{slug} in the Lambda resolves this to the full item.
+            slug: toSlug(product.name),
             status: product.status,
             createdAt: now,
             updatedAt: now,

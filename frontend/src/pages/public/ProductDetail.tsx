@@ -10,12 +10,14 @@ import { Button, Badge, Separator } from '@components/ui'
 import { Star, ShoppingCart, ShieldCheck, Truck, RefreshCw, StarHalf } from 'lucide-react'
 import { formatCurrency } from '@lib/utils'
 
-const ProductDetail: React.FC = () => {
+const ProductDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { addItem } = useCart()
     const [quantity, setQuantity] = useState(1)
 
+    // id may be a slug (e.g. "probook-x15-laptop") OR a productId (e.g. "prod-laptop-001").
+    // productService.getProduct() now forwards the value to the Lambda which handles both.
     const { data: product, isLoading, isError } = useProduct(id)
     const { data: relatedProducts } = useRelatedProducts(id)
 
@@ -97,11 +99,10 @@ const ProductDetail: React.FC = () => {
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                     key={i}
-                                    className={`h-4 w-4 ${
-                                        i < Math.floor(product.rating)
-                                            ? 'fill-primary'
-                                            : 'fill-muted text-muted'
-                                    }`}
+                                    className={`h-4 w-4 ${i < Math.floor(product.rating)
+                                        ? 'fill-primary'
+                                        : 'fill-muted text-muted'
+                                        }`}
                                 />
                             ))}
                         </div>
@@ -230,4 +231,4 @@ const ProductDetail: React.FC = () => {
     )
 }
 
-export default ProductDetail
+export default ProductDetailPage

@@ -9,12 +9,11 @@ import { useToast } from '@hooks/use-toast'
 import { Order, OrderStatus } from '@types'
 import { formatCurrency } from '@lib/utils'
 
+// Admin-only status options — includes Cancelled for manual override capability
+// Real backend produces: Pending → Processing → Delivered (COMPLETED)
 const STATUS_OPTIONS: OrderStatus[] = [
     'Pending',
     'Processing',
-    'Inventory Updated',
-    'Email Sent',
-    'Shipped',
     'Delivered',
     'Cancelled',
 ]

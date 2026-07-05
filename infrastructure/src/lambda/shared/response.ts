@@ -1,18 +1,5 @@
-/**
- * shared/response.ts
- *
- * Standard API Gateway Lambda proxy response helpers.
- *
- * CORS origin policy:
- *   The allowed origin is read from the ALLOWED_ORIGIN environment variable
- *   injected by the CDK stack at deploy time.  Falling back to
- *   'http://localhost:5173' keeps local Vite development working without
- *   any extra configuration.  In production the variable is set to the
- *   CloudFront distribution URL.
- *
- *   Using a single, explicit origin (instead of "*") is required by browsers
- *   when the request includes credentials (Authorization header).
- */
+// Hàm trả response cho API Gateway Lambda
+// ALLOWED_ORIGIN phải là URL CloudFront trong production, không dùng wildcard vì có credentials
 
 const ALLOWED_ORIGIN =
     process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173';

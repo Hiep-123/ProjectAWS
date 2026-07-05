@@ -4,26 +4,16 @@ import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import * as logs from 'aws-cdk-lib/aws-logs';
 
 /**
- * SecurityStack  —  Phase 8 Security Hardening
+ * SecurityStack — WAF v2 WebACL for CloudFront
  *
- * IMPORTANT: WAFv2 WebACLs for CloudFront MUST be created in us-east-1.
- * This stack is always deployed to us-east-1 regardless of the app region.
- * The WAF ARN is exported so FrontendStack (any region) can attach it to
- * the CloudFront distribution via Fn.importValue.
+ * IMPORTANT: WAFv2 WebACLs for CloudFront must be in us-east-1.
+ * This stack always deploys to us-east-1 regardless of the app region.
  *
- * WAF Rules (priority order — lower = evaluated first):
- *   Priority 0  — AWS IP Reputation List  (blocks known malicious IPs)
- *   Priority 1  — Common Rule Set         (OWASP Top 10 protections)
- *   Priority 2  — Known Bad Inputs        (log4j, Spring4Shell, SSRF etc.)
- *   Priority 10 — Rate-based rule         (1000 req / 5 min per IP)
- *
- * Logging:
- *   WAF logs → CloudWatch Log Group (30-day retention)
- *   Log group name must start with "aws-waf-logs-" (AWS requirement)
- *
- * Exports:
- *   EcommerceWafWebAclArn   ← consumed by FrontendStack
- *   EcommerceWafWebAclId    ← informational
+ * Rules (priority order):
+ *   0 — IP Reputation List  (known malicious IPs)
+ *   1 — Common Rule Set     (OWASP Top 10)
+ *   2 — Known Bad Inputs    (Log4j, Spring4Shell, SSRF)
+ *  10 — Rate limit: 1000 req / 5 min per IP
  */
 export class SecurityStack extends cdk.Stack {
     public readonly webAclArn: string;
@@ -52,7 +42,7 @@ export class SecurityStack extends cdk.Stack {
         // ─────────────────────────────────────────────────────────────────
         const webAcl = new wafv2.CfnWebACL(this, 'EcommerceWebACL', {
             name: 'EcommerceWebACL',
-            description: 'WAF WebACL for Ecommerce CloudFront distribution - Phase 8',
+            description: 'WAF WebACL for the Ecommerce CloudFront distribution',
             scope: 'CLOUDFRONT',
 
             // Default action: allow all traffic that doesn't match a BLOCK rule

@@ -1,22 +1,3 @@
-/**
- * OrderServiceFunction  —  Phase 6 update
- *
- * Protected routes (Cognito JWT required):
- *   POST /orders          → persist PENDING order, publish OrderCreated, return 202
- *   GET  /orders          → list current user's orders (newest first)
- *   GET  /orders/{id}     → get a single order by ID
- *
- * Phase 6 change:
- *   POST /orders no longer processes the order synchronously.
- *   It persists the order with STATUS=PENDING, publishes an
- *   OrderCreated event to EcommerceEventBus, and returns HTTP 202.
- *   The OrderProcessorFunction handles the async processing.
- *
- * IAM:
- *   DynamoDB:    GetItem + PutItem + Query (EcommerceTable)
- *   EventBridge: events:PutEvents (EcommerceEventBus)
- */
-
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { randomUUID } from 'crypto';
 import {
@@ -43,13 +24,10 @@ import { extractUserId, UnauthorizedError } from '../shared/auth';
 import { buildOrderCreatedEvent } from '../../events/order-created';
 import { EVENT_BUS_NAME } from '../../events/types';
 
-// ─── Clients ──────────────────────────────────────────────────────────────────
-
 const eb = new EventBridgeClient({});
 const eventBusName = process.env['EVENT_BUS_NAME'] ?? EVENT_BUS_NAME;
 
-// ─── HTTP 202 Accepted helper ─────────────────────────────────────────────────
-
+// Trả 202 vì đơn hàng được xử lý bất đồng bộ
 const accepted = (data: unknown): APIGatewayProxyResult => ({
     statusCode: 202,
     headers: {
@@ -59,8 +37,6 @@ const accepted = (data: unknown): APIGatewayProxyResult => ({
     },
     body: JSON.stringify(data),
 });
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export const handler = async (
     event: APIGatewayProxyEvent,
@@ -77,7 +53,7 @@ export const handler = async (
         }
 
         if (method === 'GET' && orderId) {
-            return await getOrder(orderId);
+            return await getOrder(userId, orderId);
         }
 
         if (method === 'GET') {
@@ -92,8 +68,6 @@ export const handler = async (
         return internalError(err);
     }
 };
-
-// ─── createOrder — Phase 6 async path ────────────────────────────────────────
 
 async function createOrder(
     userId: string,
@@ -114,10 +88,25 @@ async function createOrder(
 
     const { items, shippingAddress } = body;
 
-    if (!items?.length) return badRequest('items array is required and must not be empty');
-    if (!shippingAddress) return badRequest('shippingAddress is required');
+    if (!Array.isArray(items) || items.length === 0) {
+        return badRequest('items array is required and must not be empty');
+    }
+    if (typeof shippingAddress !== 'string' || shippingAddress.trim() === '') {
+        return badRequest('shippingAddress is required');
+    }
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i]!;
+        if (typeof item.productId !== 'string' || item.productId.trim() === '') {
+            return badRequest(`items[${i}].productId must be a non-empty string`);
+        }
+        if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+            return badRequest(`items[${i}].quantity must be a positive integer`);
+        }
+        if (typeof item.price !== 'number' || item.price < 0) {
+            return badRequest(`items[${i}].price must be a non-negative number`);
+        }
+    }
 
-    // ── 1. Persist initial order with STATUS = PENDING ────────────────────────
     const orderId = randomUUID();
     const now = new Date().toISOString();
     const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -145,7 +134,7 @@ async function createOrder(
         }),
     );
 
-    // ── 2. Publish OrderCreated event to EcommerceEventBus ────────────────────
+    // Gửi event sang EventBridge để xử lý bất đồng bộ
     const domainEvent = buildOrderCreatedEvent({
         orderId,
         userId,
@@ -170,7 +159,6 @@ async function createOrder(
 
     console.log('[OrderService] OrderCreated event published', JSON.stringify({ orderId }));
 
-    // ── 3. Return 202 Accepted — processing happens asynchronously ────────────
     return accepted({
         message: 'Order accepted for processing',
         orderId,
@@ -178,9 +166,7 @@ async function createOrder(
     });
 }
 
-// ─── Read helpers (unchanged from Phase 5) ────────────────────────────────────
-
-async function getOrder(orderId: string): Promise<APIGatewayProxyResult> {
+async function getOrder(userId: string, orderId: string): Promise<APIGatewayProxyResult> {
     const { Item } = await db.send(
         new GetItemCommand({
             TableName: TABLE_NAME,
@@ -192,7 +178,18 @@ async function getOrder(orderId: string): Promise<APIGatewayProxyResult> {
         return notFound('Order');
     }
 
-    return ok(unmarshall(Item));
+    const order = unmarshall(Item);
+
+    // Trả 404 cho cả trường hợp không tồn tại và không phải của user này (tránh lộ thông tin)
+    if (order['userId'] !== userId) {
+        console.warn('[OrderService] Ownership mismatch', JSON.stringify({
+            requestingUser: userId,
+            orderId,
+        }));
+        return notFound('Order');
+    }
+
+    return ok(order);
 }
 
 async function listOrders(userId: string): Promise<APIGatewayProxyResult> {
@@ -205,7 +202,7 @@ async function listOrders(userId: string): Promise<APIGatewayProxyResult> {
                 ':pk': `USER#${userId}`,
                 ':prefix': 'ORDER#',
             }),
-            ScanIndexForward: false, // newest first
+            ScanIndexForward: false, // mới nhất trước
         }),
     );
 

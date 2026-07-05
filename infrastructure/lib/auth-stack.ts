@@ -9,29 +9,14 @@ export class AuthStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    /**
-     * Cognito User Pool
-     */
     this.userPool = new cognito.UserPool(this, 'UserPool', {
       userPoolName: 'ecommerce-user-pool',
-
       selfSignUpEnabled: true,
-
-      signInAliases: {
-        email: true,
-      },
-
-      autoVerify: {
-        email: true,
-      },
-
+      signInAliases: { email: true },
+      autoVerify: { email: true },
       standardAttributes: {
-        email: {
-          required: true,
-          mutable: false,
-        },
+        email: { required: true, mutable: false },
       },
-
       passwordPolicy: {
         minLength: 8,
         requireLowercase: true,
@@ -39,57 +24,29 @@ export class AuthStack extends cdk.Stack {
         requireDigits: true,
         requireSymbols: true,
       },
-
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    /**
-     * Cognito User Pool Client
-     */
-    this.userPoolClient = new cognito.UserPoolClient(
-      this,
-      'UserPoolClient',
-      {
-        userPool: this.userPool,
+    this.userPoolClient = new cognito.UserPoolClient(this, 'UserPoolClient', {
+      userPool: this.userPool,
+      generateSecret: false,
+      authFlows: { userPassword: true, userSrp: true },
+      preventUserExistenceErrors: true,
+    });
 
-        generateSecret: false,
-
-        authFlows: {
-          userPassword: true,
-          userSrp: true,
-        },
-
-        preventUserExistenceErrors: true,
-      }
-    );
-
-    /**
-     * CUSTOMER Group
-     */
     new cognito.CfnUserPoolGroup(this, 'CustomerGroup', {
       userPoolId: this.userPool.userPoolId,
-
       groupName: 'CUSTOMER',
-
       description: 'Customer users',
     });
 
-    /**
-     * ADMIN Group
-     */
     new cognito.CfnUserPoolGroup(this, 'AdminGroup', {
       userPoolId: this.userPool.userPoolId,
-
       groupName: 'ADMIN',
-
       description: 'Administrator users',
     });
 
-    /**
-     * Outputs
-     */
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.userPool.userPoolId,
       description: 'Cognito User Pool Id',

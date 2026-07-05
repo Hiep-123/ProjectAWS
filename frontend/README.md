@@ -156,13 +156,8 @@ npm run preview
 - Protected routes with auth context
 - Persistent session management
 
-### Admin Dashboard
-- **Dashboard** (`/admin/dashboard`) - KPIs, charts, recent activities
-- **Products** (`/admin/products`) - Full CRUD operations on products
-- **Orders** (`/admin/orders`) - Order management with status updates
-- **Customers** (`/admin/customers`) - Customer management and analytics
-- **Analytics** (`/admin/analytics`) - Revenue, product, customer, order analytics
-- **Monitoring** (`/admin/monitoring`) - AWS CloudWatch simulation with EventBridge, SQS, DLQ metrics
+### Future Work
+- Admin dashboard and management APIs are out of scope for this submission and remain future work.
 
 ### AI Recommendations
 - `/recommendations` - AI-powered product recommendations (Bedrock-ready)

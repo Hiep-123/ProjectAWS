@@ -1,13 +1,23 @@
+# ── TypeScript build artifacts ────────────────────────────────────────────────
+# tsc now writes compiled output to dist/ (outDir in tsconfig.json).
+# The patterns below also protect against stale artifacts if someone runs
+# tsc without --outDir (e.g. from an IDE that ignores tsconfig).
 *.js
 !jest.config.js
 *.d.ts
+
+# Build output directory
+dist/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
 node_modules
 
+# ── CDK ───────────────────────────────────────────────────────────────────────
 # CDK asset staging directory
 .cdk.staging
 cdk.out
 
-# Environment variables — never commit real credentials
+# ── Environment variables — never commit real credentials ─────────────────────
 .env
 .env.local
 .env.*.local

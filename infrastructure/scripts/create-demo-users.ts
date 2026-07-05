@@ -1,27 +1,6 @@
 /**
- * create-demo-users.ts — Phase 10A Demo User Creation Script
- *
- * Creates demo Cognito users (customer + admin) if they do not already exist.
- * Idempotent: checks for existing users before creating.
- * Does NOT hardcode passwords — reads from environment variables.
- *
- * Required env vars (set in infrastructure/.env):
- *   COGNITO_USER_POOL_ID  — Cognito User Pool ID (from AuthStack output)
- *   DEMO_CUSTOMER_EMAIL   — e.g. customer@demo.com
- *   DEMO_CUSTOMER_PASSWORD — e.g. Demo@Customer1
- *   DEMO_ADMIN_EMAIL      — e.g. admin@demo.com
- *   DEMO_ADMIN_PASSWORD   — e.g. Demo@Admin1
- *
- * If password vars are missing, the script prints manual AWS CLI commands
- * and exits cleanly (non-fatal).
- *
- * Usage:
- *   COGNITO_USER_POOL_ID=ap-southeast-1_XXXXX \
- *   DEMO_CUSTOMER_EMAIL=customer@demo.com \
- *   DEMO_CUSTOMER_PASSWORD=Demo@Pass123 \
- *   DEMO_ADMIN_EMAIL=admin@demo.com \
- *   DEMO_ADMIN_PASSWORD=Admin@Pass123 \
- *   npm run seed:users
+ * Creates the demo Cognito customer account used by the workshop.
+ * The ADMIN group is left in place for future extension but is not used in the current demo flow.
  */
 
 import 'dotenv/config';
@@ -92,7 +71,6 @@ async function createUser(
     userPoolId: string,
     email: string,
     password: string,
-    group: 'CUSTOMER' | 'ADMIN',
 ): Promise<void> {
     const exists = await userExists(userPoolId, email);
     if (exists) {
@@ -103,10 +81,10 @@ async function createUser(
                 new AdminAddUserToGroupCommand({
                     UserPoolId: userPoolId,
                     Username: email,
-                    GroupName: group,
+                    GroupName: 'CUSTOMER',
                 }),
             );
-            console.log(`     ✅ Confirmed group membership: ${group}`);
+            console.log('     ✅ Confirmed group membership: CUSTOMER');
         } catch {
             // Group already assigned — not an error
         }
@@ -143,11 +121,11 @@ async function createUser(
         new AdminAddUserToGroupCommand({
             UserPoolId: userPoolId,
             Username: email,
-            GroupName: group,
+            GroupName: 'CUSTOMER',
         }),
     );
 
-    console.log(`  ✅ Created ${group.padEnd(9)} | ${email}`);
+    console.log(`  ✅ Created CUSTOMER | ${email}`);
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -155,19 +133,15 @@ async function createUser(
 async function run(): Promise<void> {
     const customerEmail = process.env['DEMO_CUSTOMER_EMAIL'];
     const customerPassword = process.env['DEMO_CUSTOMER_PASSWORD'];
-    const adminEmail = process.env['DEMO_ADMIN_EMAIL'];
-    const adminPassword = process.env['DEMO_ADMIN_PASSWORD'];
 
     const missingEnvVars =
-        !customerEmail || !customerPassword || !adminEmail || !adminPassword;
+        !customerEmail || !customerPassword;
 
     if (missingEnvVars) {
         console.warn('\n⚠️  Demo user env vars not set. Skipping user creation.\n');
         console.log('Set these variables in infrastructure/.env and re-run npm run seed:users:\n');
         console.log('  DEMO_CUSTOMER_EMAIL=customer@demo.com');
-        console.log('  DEMO_CUSTOMER_PASSWORD=<strong-password>');
-        console.log('  DEMO_ADMIN_EMAIL=admin@demo.com');
-        console.log('  DEMO_ADMIN_PASSWORD=<strong-password>\n');
+        console.log('  DEMO_CUSTOMER_PASSWORD=<strong-password>\n');
         console.log('Or create users manually:\n');
         console.log('  # After AuthStack deploy, get the pool ID:');
         console.log('  POOL_ID=$(aws cloudformation describe-stacks \\');
@@ -190,12 +164,10 @@ async function run(): Promise<void> {
     const userPoolId = await resolveUserPoolId();
     console.log(`\n👤 Creating demo users in pool: ${userPoolId} (region: ${REGION})\n`);
 
-    await createUser(userPoolId, customerEmail, customerPassword, 'CUSTOMER');
-    await createUser(userPoolId, adminEmail, adminPassword, 'ADMIN');
+    await createUser(userPoolId, customerEmail, customerPassword);
 
-    console.log('\n✅ Demo users ready.\n');
+    console.log('\n✅ Demo user ready.\n');
     console.log(`  Customer: ${customerEmail}`);
-    console.log(`  Admin:    ${adminEmail}`);
     console.log('\nLogin at the CloudFront URL to test authentication.\n');
 }
 

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@contexts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input } from '@components/ui'
 import { useToast } from '@hooks/use-toast'
-import { Mail, ShieldAlert, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react'
+import { Mail, ShieldAlert, ArrowLeft, KeyRound, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 const ForgotPassword: React.FC = () => {
     const navigate = useNavigate()
@@ -14,6 +14,7 @@ const ForgotPassword: React.FC = () => {
     const [step, setStep] = useState<'request' | 'confirm'>('request')
     const [code, setCode] = useState('')
     const [newPassword, setNewPassword] = useState('')
+    const [showNewPassword, setShowNewPassword] = useState(false)
 
     const handleRequestCode = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -128,13 +129,21 @@ const ForgotPassword: React.FC = () => {
                                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     id="newPassword"
-                                    type="password"
+                                    type={showNewPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    className="pl-9 h-11 text-xs"
+                                    className="pl-9 pr-10 h-11 text-xs"
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewPassword(v => !v)}
+                                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
                             </div>
                         </div>
 

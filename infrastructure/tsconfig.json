@@ -6,7 +6,15 @@
     "lib": [
       "es2022"
     ],
-    "declaration": true,
+    // ── Output ──────────────────────────────────────────────────────────
+    // Compiled JS goes to dist/ instead of next to .ts source files.
+    // rootDir is set explicitly so TypeScript mirrors the full source tree.
+    "outDir": "dist",
+    "rootDir": ".",
+    // declaration: false — CDK apps are not libraries; no consumers need
+    // .d.ts files from bin/ or lib/. Removes ~30 generated files per build.
+    "declaration": false,
+    // ── Type checking ────────────────────────────────────────────────────
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -16,8 +24,10 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": false,
+    // ── Source maps ──────────────────────────────────────────────────────
     "inlineSourceMap": true,
     "inlineSources": true,
+    // ── Misc ────────────────────────────────────────────────────────────
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "skipLibCheck": true,
@@ -27,6 +37,7 @@
   },
   "exclude": [
     "node_modules",
-    "cdk.out"
+    "cdk.out",
+    "dist"
   ]
 }

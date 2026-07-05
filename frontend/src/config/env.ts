@@ -1,18 +1,7 @@
 /// <reference types="vite/client" />
 
 /**
- * Environment Variables Configuration — Phase 10 update
- *
- * Resolution priority for each value:
- *   1. window.__RUNTIME_*   — injected from /config.json at deploy time
- *                             (set by FrontendStack CDK BucketDeployment)
- *   2. import.meta.env.*    — VITE_* variables baked in at build time
- *                             (used for local development via frontend/.env)
- *   3. safe empty string '' — surfaces as a visible error rather than
- *                             silently calling a wrong endpoint
- *
- * NEVER add a hardcoded production URL as a fallback — it creates a hidden
- * dependency that survives even after the real infrastructure is updated.
+ * Runtime environment values for the frontend, with runtime config taking precedence.
  */
 
 interface ImportMetaEnv {
@@ -57,7 +46,7 @@ export const ENV = {
     COGNITO_REGION:
         window.__RUNTIME_COGNITO__?.region ||
         import.meta.env['VITE_COGNITO_REGION'] ||
-        'ap-southeast-2',
+        'ap-southeast-1',
 
     // ── Environment flags ─────────────────────────────────────────────────────
     ENVIRONMENT:

@@ -1,15 +1,3 @@
-/**
- * CartServiceFunction
- *
- * Protected routes (Cognito JWT required):
- *   GET    /cart                 → list current user's cart items
- *   POST   /cart                 → add a product to the cart
- *   PUT    /cart                 → update quantity of an existing cart item
- *   DELETE /cart/{productId}     → remove an item from the cart
- *
- * IAM: GetItem + PutItem + UpdateItem + DeleteItem on EcommerceTable.
- */
-
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import {
     db,
@@ -30,8 +18,6 @@ import {
     unauthorized,
 } from '../shared/response';
 import { extractUserId, UnauthorizedError } from '../shared/auth';
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export const handler = async (
     event: APIGatewayProxyEvent,
@@ -61,14 +47,11 @@ export const handler = async (
     }
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function getCart(userId: string): Promise<APIGatewayProxyResult> {
     const { Items = [] } = await db.send(
         new QueryCommand({
             TableName: TABLE_NAME,
-            KeyConditionExpression:
-                'PK = :pk AND begins_with(SK, :prefix)',
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
             ExpressionAttributeValues: marshall({
                 ':pk': `USER#${userId}`,
                 ':prefix': 'CART#',
@@ -102,11 +85,7 @@ async function addToCart(
 
     const now = new Date().toISOString();
 
-    // Use UpdateItem with ADD so that repeated "Add to cart" calls increment
-    // quantity rather than overwriting the item.  If the item does not exist yet,
-    // ADD initialises the quantity to the incoming value (DynamoDB behaviour).
-    // `price`, `updatedAt`, and the static fields are SET unconditionally so
-    // the first call also writes them correctly.
+    // Dùng ADD để cộng dồn số lượng nếu item đã có trong giỏ
     const { Attributes } = await db.send(
         new UpdateItemCommand({
             TableName: TABLE_NAME,
@@ -187,7 +166,6 @@ async function removeFromCart(
     userId: string,
     productId: string,
 ): Promise<APIGatewayProxyResult> {
-    // Check existence first so we can return 404 instead of silently no-oping.
     const { Item } = await db.send(
         new GetItemCommand({
             TableName: TABLE_NAME,

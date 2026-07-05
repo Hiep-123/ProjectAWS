@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { CognitoIdentityProviderClient, InitiateAuthCommand } from '@aws-sdk/client-cognito-identity-provider';
-import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import http from 'http';

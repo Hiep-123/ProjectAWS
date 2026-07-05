@@ -46,8 +46,9 @@ const OrderDetailPage: React.FC = () => {
         cancelOrder(order.id)
     }
 
-    // List of standard status flow for event driven architecture to show current progress
-    const flowStatuses = ['Pending', 'Processing', 'Inventory Updated', 'Email Sent', 'Shipped', 'Delivered']
+    // Real backend demo flow: PENDING → PROCESSING → COMPLETED (shown as Delivered)
+    // Removed: Shipped, Inventory Updated, Email Sent — backend never produces these.
+    const flowStatuses = ['Pending', 'Processing', 'Delivered']
     const activeIndex = flowStatuses.indexOf(order.status)
 
     return (
@@ -89,8 +90,7 @@ const OrderDetailPage: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     {/* Live polling indicator — only shown when mocks are off and order is not terminal */}
                                     {!ENV.ENABLE_MOCKS &&
-                                        order.status !== 'Delivered' &&
-                                        order.status !== 'Cancelled' && (
+                                        order.status !== 'Delivered' && (
                                             <span className="flex items-center gap-1 text-[10px] font-semibold text-primary/70 animate-pulse">
                                                 <RefreshCw className="w-3 h-3 animate-spin" />
                                                 Live

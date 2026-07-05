@@ -1,19 +1,6 @@
 /**
- * cart.service.ts
- *
- * Routing logic:
- *   VITE_ENABLE_MOCKS=true  → mock (in-memory, no network)
- *   VITE_ENABLE_MOCKS=false → live API Gateway  (Cognito JWT required)
- *
- * API Gateway routes  (all protected):
- *   GET    /cart                     → { items: CartItem[], count: number }
- *   POST   /cart                     → body: { productId, quantity, price }
- *   PUT    /cart                     → body: { productId, quantity }
- *   DELETE /cart/{productId}         → { message: string }
- *
- * The Lambda stores cart items as DynamoDB items keyed by
- * PK=USER#{userId} / SK=CART#{productId}, so there is no server-side
- * Cart aggregate — we reconstruct it on the client.
+ * Cart service with mock and live API modes.
+ * Cart results are enriched with product names and images when the catalog is available.
  */
 
 import { api } from '@lib'
@@ -41,11 +28,23 @@ interface LambdaCartListResponse {
     count: number
 }
 
-// Convert Lambda item → frontend CartItem (adds productName/image placeholders
-// until a product-enrichment step joins against the product catalog).
+interface LambdaProductItem {
+    productId?: string
+    id?: string
+    name?: string
+    imageUrl?: string
+    image?: string
+}
+
+interface LambdaProductListResponse {
+    items: LambdaProductItem[]
+    count: number
+}
+
+// Base conversion without enrichment (used as fallback)
 const toCartItem = (raw: LambdaCartItem): CartItem => ({
     productId: raw.productId,
-    productName: raw.productId,   // enriched by the calling UI layer if needed
+    productName: raw.productId,   // overwritten by enrichment below
     price: raw.price,
     quantity: raw.quantity,
     image: '',
@@ -56,6 +55,34 @@ const buildCart = (items: CartItem[]): Cart => ({
     total: items.reduce((s, i) => s + i.price * i.quantity, 0),
     itemCount: items.reduce((s, i) => s + i.quantity, 0),
 })
+
+/**
+ * Enrich cart items with product names and images when the catalog is available.
+ * Best-effort: falls back to the product ID if the catalog fetch fails.
+ */
+async function enrichCartItems(items: CartItem[]): Promise<CartItem[]> {
+    if (items.length === 0) return items
+    try {
+        const { data } = await api.get<LambdaProductListResponse>('/products')
+        const productMap = new Map<string, LambdaProductItem>()
+        for (const p of data.items) {
+            const key = p.productId ?? p.id ?? ''
+            if (key) productMap.set(key, p)
+        }
+        return items.map(item => {
+            const p = productMap.get(item.productId)
+            if (!p) return item
+            return {
+                ...item,
+                productName: p.name ?? item.productId,
+                image: p.image ?? p.imageUrl ?? item.image,
+            }
+        })
+    } catch {
+        // Best-effort enrichment — not critical
+        return items
+    }
+}
 
 // ─── In-memory mock store ─────────────────────────────────────────────────────
 let mockCart: CartItem[] = []
@@ -69,7 +96,9 @@ export const cartService = {
         }
 
         const { data } = await api.get<LambdaCartListResponse>('/cart')
-        return buildCart(data.items.map(toCartItem))
+        const baseItems = data.items.map(toCartItem)
+        const enriched = await enrichCartItems(baseItems)
+        return buildCart(enriched)
     },
 
     // ── POST /cart ─────────────────────────────────────────────────────────

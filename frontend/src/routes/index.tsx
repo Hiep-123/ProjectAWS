@@ -3,13 +3,11 @@ import { Routes, Route } from 'react-router-dom'
 
 // Route Guards
 import ProtectedRoute from './ProtectedRoute'
-import AdminRoute from './AdminRoute'
 import GuestRoute from './GuestRoute'
 
 // Layouts
 import PublicLayout from '@layouts/PublicLayout'
 import AuthLayout from '@layouts/AuthLayout'
-import AdminLayout from '@layouts/AdminLayout'
 
 // Public Pages
 import Home from '@pages/public/Home'
@@ -27,17 +25,8 @@ import Login from '@pages/auth/Login'
 import Register from '@pages/auth/Register'
 import ForgotPassword from '@pages/auth/ForgotPassword'
 import ConfirmRegistration from '@pages/auth/ConfirmRegistration'
-// Admin Pages
-import AdminDashboard from '@pages/admin/AdminDashboard'
-import AdminProducts from '@pages/admin/AdminProducts'
-import AdminOrders from '@pages/admin/AdminOrders'
-import AdminCustomers from '@pages/admin/AdminCustomers'
-import AdminAnalytics from '@pages/admin/AdminAnalytics'
-import AdminMonitoring from '@pages/admin/AdminMonitoring'
-import AdminSettings from '@pages/admin/AdminSettings'
-
 // Error Pages
-import NotFound from '@pages/auth/NotFound'
+import NotFound from '@pages/errors/NotFound'
 import Unauthorized from '@pages/errors/Unauthorized'
 import Forbidden from '@pages/errors/Forbidden'
 import ServerError from '@pages/errors/ServerError'
@@ -74,18 +63,6 @@ const AppRoutes: React.FC = () => {
                         />
                     }
                 />
-            </Route>
-
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminRoute element={<AdminLayout />} />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="customers" element={<AdminCustomers />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
-                <Route path="monitoring" element={<AdminMonitoring />} />
-                <Route path="settings" element={<AdminSettings />} />
             </Route>
 
             {/* Error Pages */}

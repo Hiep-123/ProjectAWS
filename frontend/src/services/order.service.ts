@@ -117,19 +117,16 @@ const toOrder = (raw: LambdaOrder): Order => ({
  */
 function normalizeOrderStatus(status: string): OrderStatus {
     const map: Record<string, OrderStatus> = {
-        // Backend → frontend
+        // Backend → frontend display mapping (matches real demo flow)
         PENDING: 'Pending',
         PROCESSING: 'Processing',
         COMPLETED: 'Delivered',
-        FAILED: 'Cancelled',
+        FAILED: 'Cancelled',    // FAILED treated as Cancelled for display
         // Pass-through for already-normalized values (mock data, cached state)
         Pending: 'Pending',
         Processing: 'Processing',
         Delivered: 'Delivered',
         Cancelled: 'Cancelled',
-        'Inventory Updated': 'Inventory Updated',
-        'Email Sent': 'Email Sent',
-        Shipped: 'Shipped',
     }
     return map[status] ?? 'Pending'
 }
@@ -169,7 +166,7 @@ export const orderService = {
         return toOrder(data)
     },
 
-    // ── Order timeline (mock-only until Phase 6 EventBridge is deployed) ──
+    // Order timeline is mock-only in the current demo build.
     async getOrderTimeline(orderId: string): Promise<OrderTimeline[]> {
         await simulateDelay()
         return getMockOrderTimeline(orderId)

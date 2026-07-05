@@ -58,6 +58,7 @@ interface LambdaProduct {
     GSI1SK?: string
     GSI3PK?: string
     GSI3SK?: string
+    slug?: string
 }
 
 /**
@@ -73,13 +74,11 @@ interface LambdaProduct {
 function normalizeProduct(raw: LambdaProduct): import('@types').Product {
     return {
         ...raw,
-        // id: prefer explicit id, fall back to productId
         id: raw.id ?? raw.productId ?? '',
-        // image: prefer explicit image, fall back to imageUrl
         image: raw.image ?? raw.imageUrl ?? '',
-        // numeric defaults for fields not stored in DynamoDB
         rating: raw.rating ?? 0,
         reviews: raw.reviews ?? 0,
+        slug: raw.slug,
     } as import('@types').Product
 }
 
@@ -107,6 +106,9 @@ export const productService = {
 
         const queryParams: Record<string, string | number> = {}
         if (params.category) queryParams['category'] = params.category
+        if (params.search) queryParams['search'] = params.search
+        if ((params as any).sort) queryParams['sort'] = (params as any).sort
+        if (params.maxPrice) queryParams['maxPrice'] = params.maxPrice
 
         const { data } = await api.get<LambdaProductListResponse>('/products', {
             params: queryParams,

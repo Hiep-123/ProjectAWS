@@ -1,11 +1,3 @@
-/**
- * src/events/order-processing.ts
- *
- * Contract for the OrderProcessing domain event.
- * Published by OrderProcessorFunction once it has begun processing
- * and updated the order status to PROCESSING in DynamoDB.
- */
-
 import type { DomainEvent } from './types';
 
 export interface OrderProcessingPayload {
@@ -17,9 +9,7 @@ export interface OrderProcessingPayload {
 
 export type OrderProcessingEvent = DomainEvent<'OrderProcessing', OrderProcessingPayload>;
 
-export function buildOrderProcessingEvent(
-    payload: OrderProcessingPayload,
-): OrderProcessingEvent {
+export function buildOrderProcessingEvent(payload: OrderProcessingPayload): OrderProcessingEvent {
     return {
         eventType: 'OrderProcessing',
         version: '1',

@@ -51,7 +51,6 @@ const SearchInput: React.FC<SearchInputProps> = ({
 
     return (
         <div className={cn('relative flex items-center', className)}>
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
                 ref={inputRef}
                 type="search"
@@ -59,14 +58,14 @@ const SearchInput: React.FC<SearchInputProps> = ({
                 onChange={handleChange}
                 placeholder={placeholder}
                 className={cn(
-                    'flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-9 py-2 text-sm',
+                    'flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-9 py-2 text-sm',
                     'ring-offset-background placeholder:text-muted-foreground',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     '[&::-webkit-search-cancel-button]:hidden'
                 )}
             />
-            {localValue && (
+            {localValue ? (
                 <button
                     onClick={handleClear}
                     className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
@@ -74,6 +73,8 @@ const SearchInput: React.FC<SearchInputProps> = ({
                 >
                     <X className="h-4 w-4" />
                 </button>
+            ) : (
+                <Search className="absolute right-3 h-4 w-4 text-muted-foreground pointer-events-none" />
             )}
         </div>
     )

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@contexts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Separator } from '@components/ui'
 import { useToast } from '@hooks/use-toast'
-import { Mail, Lock, ShieldAlert } from 'lucide-react'
+import { Mail, Lock, ShieldAlert, Eye, EyeOff } from 'lucide-react'
 
 const Login: React.FC = () => {
     const navigate = useNavigate()
@@ -12,6 +12,7 @@ const Login: React.FC = () => {
 
     const [email, setEmail] = React.useState('john@example.com')
     const [password, setPassword] = React.useState('password')
+    const [showPassword, setShowPassword] = React.useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -77,12 +78,20 @@ const Login: React.FC = () => {
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 id="password"
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="pl-9 h-11"
+                                className="pl-9 pr-10 h-11"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 

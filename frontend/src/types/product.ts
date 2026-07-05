@@ -15,6 +15,7 @@ export interface Product {
     stock: number
     rating: number
     reviews: number
+    slug?: string        // URL-friendly name — e.g. "probook-x15-laptop"
     sku?: string
     tags?: string[]
     featured?: boolean

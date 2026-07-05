@@ -31,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showAddToCart = true
     }
 
     return (
-        <Link to={`/products/${product.id}`} className="group block">
+        <Link to={`/products/${product.slug ?? product.id}`} className="group block">
             <div className="relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1">
                 {/* Image */}
                 <div className="relative aspect-square overflow-hidden bg-muted">
@@ -94,11 +94,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showAddToCart = true
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                     key={i}
-                                    className={`h-3.5 w-3.5 ${
-                                        i < Math.floor(product.rating)
-                                            ? 'fill-primary text-primary'
-                                            : 'fill-muted text-muted-foreground'
-                                    }`}
+                                    className={`h-3.5 w-3.5 ${i < Math.floor(product.rating)
+                                        ? 'fill-primary text-primary'
+                                        : 'fill-muted text-muted-foreground'
+                                        }`}
                                 />
                             ))}
                         </div>
@@ -131,7 +130,7 @@ interface FeaturedProductCardProps {
 
 export const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({ product, rank }) => {
     return (
-        <Link to={`/products/${product.id}`} className="group flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+        <Link to={`/products/${product.slug ?? product.id}`} className="group flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                 <img
                     src={product.image}

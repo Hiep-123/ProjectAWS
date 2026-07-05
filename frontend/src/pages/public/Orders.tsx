@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOrders } from '@hooks/queries/useOrders'
 import PageHeader from '@components/shared/PageHeader'
@@ -11,29 +11,42 @@ import { ShoppingBag, ChevronRight, Calendar, DollarSign, Package } from 'lucide
 import { formatCurrency } from '@lib/utils'
 import { OrderStatus } from '@types'
 
-const STATUS_FILTER_OPTIONS: { label: string; value: OrderStatus | 'all' }[] = [
+// ── Tabs match the real backend demo flow: PENDING → PROCESSING → COMPLETED ──
+// "Shipped" and "Cancelled" are removed because the backend never produces them.
+const STATUS_TABS: { label: string; value: OrderStatus | 'all' }[] = [
     { label: 'All Orders', value: 'all' },
     { label: 'Pending', value: 'Pending' },
     { label: 'Processing', value: 'Processing' },
-    { label: 'Shipped', value: 'Shipped' },
     { label: 'Delivered', value: 'Delivered' },
-    { label: 'Cancelled', value: 'Cancelled' },
 ]
 
 const OrdersPage: React.FC = () => {
     const navigate = useNavigate()
-    const [page, setPage] = useState(1)
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
+    const [page, setPage] = useState(1)
+    const PAGE_SIZE = 5
 
-    const params = {
-        page,
-        pageSize: 5,
-        search: search || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-    }
+    // ── Fetch ALL user orders once — client-side filtering handles the rest ──
+    // GET /orders returns all orders for the authenticated user via GSI2.
+    // The backend does not support ?status= filtering, so we fetch everything
+    // and filter on the frontend. This is correct for typical demo scale (<20 orders).
+    const { data: allOrdersResponse, isLoading, isError, refetch } = useOrders({
+        page: 1,
+        pageSize: 200,   // large enough to cover all demo orders in one request
+    })
 
-    const { data: orderResponse, isLoading, isError, refetch } = useOrders(params)
+    // ── Client-side filter: status tab + search by order ID ─────────────────
+    const filteredOrders = useMemo(() => {
+        const all = allOrdersResponse?.data ?? []
+        return all
+            .filter(o => statusFilter === 'all' || o.status === statusFilter)
+            .filter(o => !search || o.id.toLowerCase().includes(search.toLowerCase()))
+    }, [allOrdersResponse?.data, statusFilter, search])
+
+    // ── Client-side pagination ───────────────────────────────────────────────
+    const totalFiltered = filteredOrders.length
+    const pagedOrders = filteredOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     const handleClearFilters = () => {
         setSearch('')
@@ -52,15 +65,15 @@ const OrdersPage: React.FC = () => {
             {/* Filter controls */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 pb-2 border-b">
                 <div className="flex flex-wrap gap-1.5">
-                    {STATUS_FILTER_OPTIONS.map((opt) => (
+                    {STATUS_TABS.map((tab) => (
                         <Button
-                            key={opt.value}
-                            variant={statusFilter === opt.value ? 'default' : 'outline'}
-                            onClick={() => { setStatusFilter(opt.value); setPage(1) }}
+                            key={tab.value}
+                            variant={statusFilter === tab.value ? 'default' : 'outline'}
+                            onClick={() => { setStatusFilter(tab.value); setPage(1) }}
                             className="text-xs px-3.5 h-8 font-semibold"
                             size="sm"
                         >
-                            {opt.label}
+                            {tab.label}
                         </Button>
                     ))}
                 </div>
@@ -85,7 +98,7 @@ const OrdersPage: React.FC = () => {
                     <p className="text-muted-foreground text-sm">Please refresh to fetch your orders again.</p>
                     <Button onClick={() => refetch()} size="sm">Retry</Button>
                 </div>
-            ) : !orderResponse || orderResponse.data.length === 0 ? (
+            ) : pagedOrders.length === 0 ? (
                 <EmptyState
                     icon={ShoppingBag}
                     title="No orders found"
@@ -97,7 +110,7 @@ const OrdersPage: React.FC = () => {
                 />
             ) : (
                 <div className="space-y-6">
-                    {orderResponse.data.map((order: any) => (
+                    {pagedOrders.map((order: any) => (
                         <Card
                             key={order.id}
                             className="border border-border/40 hover:border-border/80 hover:shadow-md transition-all cursor-pointer"
@@ -169,27 +182,27 @@ const OrdersPage: React.FC = () => {
                         </Card>
                     ))}
 
-                    {/* Pagination */}
-                    {orderResponse.total > params.pageSize && (
+                    {/* Pagination over filtered results */}
+                    {totalFiltered > PAGE_SIZE && (
                         <div className="flex items-center justify-between border-t pt-6">
                             <span className="text-sm text-muted-foreground">
-                                Showing {(page - 1) * params.pageSize + 1} -{' '}
-                                {Math.min(page * params.pageSize, orderResponse.total)} of {orderResponse.total} orders
+                                Showing {(page - 1) * PAGE_SIZE + 1}–
+                                {Math.min(page * PAGE_SIZE, totalFiltered)} of {totalFiltered} orders
                             </span>
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     disabled={page === 1}
-                                    onClick={() => setPage(page - 1)}
+                                    onClick={() => setPage(p => p - 1)}
                                 >
                                     Previous
                                 </Button>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={page * params.pageSize >= orderResponse.total}
-                                    onClick={() => setPage(page + 1)}
+                                    disabled={page * PAGE_SIZE >= totalFiltered}
+                                    onClick={() => setPage(p => p + 1)}
                                 >
                                     Next
                                 </Button>

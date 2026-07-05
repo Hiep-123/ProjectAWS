@@ -49,44 +49,40 @@ export const DEFAULT_PAGE_SIZE = 12
 export const ADMIN_PAGE_SIZE = 20
 export const MAX_PAGE_SIZE = 100
 
-// Order Status Flow (Event-Driven Architecture representation)
+// Order Status Flow — matches real backend demo flow: PENDING → PROCESSING → COMPLETED
+// Frontend display: Pending → Processing → Delivered
 export const ORDER_STATUSES = [
-    { key: 'pending', label: 'Pending', description: 'Order received', icon: 'Clock' },
-    { key: 'processing', label: 'Processing', description: 'Payment verified, preparing order', icon: 'Cog' },
-    { key: 'inventory_updated', label: 'Inventory Updated', description: 'Stock adjusted via EventBridge → SQS', icon: 'Package' },
-    { key: 'email_sent', label: 'Email Sent', description: 'Confirmation email dispatched via SNS', icon: 'Mail' },
-    { key: 'shipped', label: 'Shipped', description: 'Order handed to carrier', icon: 'Truck' },
-    { key: 'delivered', label: 'Delivered', description: 'Package delivered to customer', icon: 'CheckCircle' },
+    { key: 'pending', label: 'Pending', description: 'Order received and queued for processing', icon: 'Clock' },
+    { key: 'processing', label: 'Processing', description: 'Order event dispatched via EventBridge → SQS → Lambda', icon: 'Cog' },
+    { key: 'delivered', label: 'Delivered', description: 'Order fulfilled and delivered to customer', icon: 'CheckCircle' },
 ] as const
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
     pending: 'Pending',
     processing: 'Processing',
-    inventory_updated: 'Inventory Updated',
-    email_sent: 'Email Sent',
-    shipped: 'Shipped',
     delivered: 'Delivered',
+    // Legacy / backward compat — Cancelled can appear in old mock data
     cancelled: 'Cancelled',
 }
 
-// Product Categories
+// Product Categories — must match DynamoDB seed data categories exactly.
+// These values are used by both Home page and Products page filter.
+// Changing a value here requires reseeding DynamoDB if categories change.
 export const PRODUCT_CATEGORIES = [
-    { value: 'all', label: 'All Categories', icon: '🛍️' },
-    { value: 'electronics', label: 'Electronics', icon: '💻' },
-    { value: 'clothing', label: 'Clothing', icon: '👕' },
-    { value: 'books', label: 'Books', icon: '📚' },
-    { value: 'home', label: 'Home & Living', icon: '🏠' },
-    { value: 'sports', label: 'Sports', icon: '⚽' },
-    { value: 'toys', label: 'Toys & Games', icon: '🎮' },
+    { value: 'all', label: 'All', icon: '🛍️' },
+    { value: 'laptops', label: 'Laptops', icon: '💻' },
+    { value: 'phones', label: 'Phones', icon: '📱' },
+    { value: 'audio', label: 'Audio', icon: '🎧' },
+    { value: 'accessories', label: 'Accessories', icon: '⌨️' },
+    { value: 'gaming', label: 'Gaming', icon: '🎮' },
 ] as const
 
-// Sort Options
+// Sort Options — values must match backend Lambda sort param handling
 export const SORT_OPTIONS = [
-    { value: 'newest', label: 'Newest First' },
+    { value: 'default', label: 'Default' },
     { value: 'price_asc', label: 'Price: Low to High' },
     { value: 'price_desc', label: 'Price: High to Low' },
-    { value: 'rating', label: 'Highest Rated' },
-    { value: 'popular', label: 'Most Popular' },
+    { value: 'name_asc', label: 'Name: A to Z' },
 ] as const
 
 // Price Ranges
