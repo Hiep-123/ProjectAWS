@@ -3,23 +3,10 @@ import { Construct } from 'constructs';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import * as logs from 'aws-cdk-lib/aws-logs';
 
-/**
- * SecurityStack — WAF v2 WebACL for CloudFront
- *
- * IMPORTANT: WAFv2 WebACLs for CloudFront must be in us-east-1.
- * This stack always deploys to us-east-1 regardless of the app region.
- *
- * Rules (priority order):
- *   0 — IP Reputation List  (known malicious IPs)
- *   1 — Common Rule Set     (OWASP Top 10)
- *   2 — Known Bad Inputs    (Log4j, Spring4Shell, SSRF)
- *  10 — Rate limit: 1000 req / 5 min per IP
- */
 export class SecurityStack extends cdk.Stack {
     public readonly webAclArn: string;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-        // WAF for CloudFront MUST be in us-east-1
         super(scope, id, {
             ...props,
             env: {
@@ -28,18 +15,7 @@ export class SecurityStack extends cdk.Stack {
             },
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // WAF WebACL — CLOUDFRONT scope
-        //
-        // Managed rule groups are evaluated in priority order.
-        // All use WCU (Web ACL Capacity Units) — managed rules listed here
-        // have well-known WCU costs:
-        //   AWSManagedRulesAmazonIpReputationList  25 WCU
-        //   AWSManagedRulesCommonRuleSet            700 WCU
-        //   AWSManagedRulesKnownBadInputsRuleSet    200 WCU
-        //   RateBasedRule                           2 WCU
-        //   Total: 927 WCU (limit: 5000)
-        // ─────────────────────────────────────────────────────────────────
+        // WAF cho CloudFront ở us-east-1.
         const webAcl = new wafv2.CfnWebACL(this, 'EcommerceWebACL', {
             name: 'EcommerceWebACL',
             description: 'WAF WebACL for the Ecommerce CloudFront distribution',
@@ -55,9 +31,7 @@ export class SecurityStack extends cdk.Stack {
             },
 
             rules: [
-                // ── Priority 0: IP Reputation List ────────────────────────
-                // Blocks requests from IPs on AWS threat intelligence feeds
-                // (botnets, malware C2 servers, Tor exit nodes, scanners).
+                // Chặn IP có dấu hiệu bất thường.
                 {
                     name: 'AWSManagedRulesAmazonIpReputationList',
                     priority: 0,
@@ -75,9 +49,7 @@ export class SecurityStack extends cdk.Stack {
                     },
                 },
 
-                // ── Priority 1: Common Rule Set (OWASP Top 10) ────────────
-                // Blocks SQL injection, XSS, path traversal, file inclusion,
-                // and other common web attack vectors.
+                // Chặn các pattern web attack phổ biến.
                 {
                     name: 'AWSManagedRulesCommonRuleSet',
                     priority: 1,
@@ -95,9 +67,7 @@ export class SecurityStack extends cdk.Stack {
                     },
                 },
 
-                // ── Priority 2: Known Bad Inputs ──────────────────────────
-                // Blocks request patterns known to be exploits: Log4JRCE,
-                // Spring4Shell, SSRF attempts, JavaDeserialisation, etc.
+                // Chặn input đáng ngờ.
                 {
                     name: 'AWSManagedRulesKnownBadInputsRuleSet',
                     priority: 2,
@@ -115,12 +85,7 @@ export class SecurityStack extends cdk.Stack {
                     },
                 },
 
-                // ── Priority 10: Rate-based rule ──────────────────────────
-                // Blocks any IP that sends > 1000 requests in a 5-minute
-                // window. Evaluated last so legitimate high-volume IPs that
-                // trip managed rules are blocked at priority 0-2 first.
-                // 1000 req / 300s ≈ 3.3 rps sustained — suitable for an
-                // authenticated ecommerce SPA.
+                // Giới hạn tần suất cho mỗi IP.
                 {
                     name: 'RateLimitPerIP',
                     priority: 10,
@@ -142,14 +107,8 @@ export class SecurityStack extends cdk.Stack {
             ],
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // WAF Logging → CloudWatch Log Group
-        //
-        // AWS requires the log group name to start with "aws-waf-logs-".
-        // Logs include: blocked requests, matched rules, sampled requests.
-        // ─────────────────────────────────────────────────────────────────
+        // Ghi log WAF vào CloudWatch.
         const wafLogGroup = new logs.LogGroup(this, 'WafLogGroup', {
-            // AWS WAF logging requirement: name MUST start with aws-waf-logs-
             logGroupName: 'aws-waf-logs-ecommerce',
             retention: logs.RetentionDays.ONE_MONTH,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -160,17 +119,10 @@ export class SecurityStack extends cdk.Stack {
             logDestinationConfigs: [wafLogGroup.logGroupArn],
         });
 
-        // WAF logging configuration must wait for the log group to exist
         wafLogging.node.addDependency(wafLogGroup);
-
-        // ─────────────────────────────────────────────────────────────────
-        // Expose ARN for FrontendStack to attach to CloudFront
-        // ─────────────────────────────────────────────────────────────────
         this.webAclArn = webAcl.attrArn;
 
-        // ─────────────────────────────────────────────────────────────────
-        // Outputs
-        // ─────────────────────────────────────────────────────────────────
+        // Output cho stack khác dùng.
         new cdk.CfnOutput(this, 'WafWebAclArn', {
             value: webAcl.attrArn,
             description: 'WAF WebACL ARN — attached to CloudFront distribution',

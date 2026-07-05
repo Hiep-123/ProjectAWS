@@ -25,7 +25,6 @@ export class EventStack extends cdk.Stack {
             encryption: sqs.QueueEncryption.SQS_MANAGED,
         });
 
-        // visibilityTimeout = 6x timeout của Lambda (30s) theo khuyến nghị AWS
         const orderQueue = new sqs.Queue(this, 'OrderQueue', {
             queueName: 'EcommerceOrderQueue',
             visibilityTimeout: cdk.Duration.seconds(180),
@@ -41,8 +40,6 @@ export class EventStack extends cdk.Stack {
             eventBusName: 'EcommerceEventBus',
         });
 
-        // Rule chuyển event OrderCreated vào hàng đợi SQS
-        // Dùng orderDLQ làm delivery DLQ để tránh mất event nếu SQS không nhận được
         new events.Rule(this, 'OrderCreatedRule', {
             eventBus: this.eventBus,
             ruleName: 'EcommerceOrderCreatedRule',
@@ -88,7 +85,6 @@ export class EventStack extends cdk.Stack {
             logGroup: orderProcessorLogGroup,
         });
 
-        // Chỉ cấp quyền GetItem và UpdateItem — không cần Query
         orderProcessorFn.addToRolePolicy(
             new iam.PolicyStatement({
                 sid: 'OrderProcessorDynamo',
@@ -107,8 +103,6 @@ export class EventStack extends cdk.Stack {
             }),
         );
 
-        // batchSize=1 để mỗi Lambda chỉ xử lý 1 đơn hàng
-        // reportBatchItemFailures để không re-queue những record đã thành công
         orderProcessorFn.addEventSource(
             new lambdaEventSources.SqsEventSource(orderQueue, {
                 batchSize: 1,

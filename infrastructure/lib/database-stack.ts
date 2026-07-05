@@ -16,25 +16,21 @@ export class DatabaseStack extends cdk.Stack {
             encryption: dynamodb.TableEncryptionV2.awsManagedKey(),
             pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
             timeToLiveAttribute: 'TTL',
-            // ⚠️ DESTROY phù hợp cho demo — đổi sang RETAIN trước khi đưa vào production
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             globalSecondaryIndexes: [
                 {
-                    // GSI1: lọc sản phẩm theo danh mục — GSI1PK = CATEGORY#{category}
                     indexName: 'GSI1',
                     partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },
                     sortKey: { name: 'GSI1SK', type: dynamodb.AttributeType.STRING },
                     projectionType: dynamodb.ProjectionType.ALL,
                 },
                 {
-                    // GSI2: lấy đơn hàng của user theo thời gian — GSI2PK = USER#{userId}
                     indexName: 'GSI2',
                     partitionKey: { name: 'GSI2PK', type: dynamodb.AttributeType.STRING },
                     sortKey: { name: 'GSI2SK', type: dynamodb.AttributeType.STRING },
                     projectionType: dynamodb.ProjectionType.ALL,
                 },
                 {
-                    // GSI3: lấy toàn bộ sản phẩm — GSI3PK = PRODUCT
                     indexName: 'GSI3',
                     partitionKey: { name: 'GSI3PK', type: dynamodb.AttributeType.STRING },
                     sortKey: { name: 'GSI3SK', type: dynamodb.AttributeType.STRING },

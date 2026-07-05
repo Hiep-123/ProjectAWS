@@ -34,7 +34,6 @@ async function processRecord(record: SQSRecord): Promise<void> {
     let orderCreatedEvent: OrderCreatedEvent;
 
     try {
-        // SQS body là EventBridge envelope, event thật nằm trong "detail"
         const sqsBody = JSON.parse(record.body) as { detail: OrderCreatedEvent };
         orderCreatedEvent = sqsBody.detail;
     } catch {
@@ -60,7 +59,6 @@ async function processRecord(record: SQSRecord): Promise<void> {
 
     const existingOrder = unmarshall(Item);
     if (existingOrder['status'] !== 'PENDING') {
-        // Đơn đã được xử lý trước đó, bỏ qua
         console.warn('[OrderProcessor] Order is not in PENDING state — skipping', {
             orderId,
             currentStatus: existingOrder['status'],
@@ -135,8 +133,6 @@ async function publishEvent(detailType: string, detail: object): Promise<void> {
     );
 }
 
-// Kiểm tra dữ liệu đơn hàng trước khi hoàn tất
-// Mở rộng hàm này để thêm logic kiểm tra tồn kho hoặc thanh toán
 async function fulfillOrder(order: {
     orderId: string;
     userId: string;

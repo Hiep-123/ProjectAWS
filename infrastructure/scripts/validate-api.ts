@@ -51,7 +51,6 @@ async function makeRequest(url: string, method: string, headers: any, body?: any
 async function validate() {
     console.log('=== Backend Validation script ===');
 
-    // 1. Authenticate with Cognito
     console.log('Authenticating customer@demo.com...');
     const cognito = new CognitoIdentityProviderClient({ region: REGION });
     const authRes = await cognito.send(new InitiateAuthCommand({
@@ -75,13 +74,11 @@ async function validate() {
 
     const apiUrl = 'https://esgpnsxpf1.execute-api.ap-southeast-1.amazonaws.com/prod';
 
-    // 2. GET /cart
     console.log('\nTesting GET /cart...');
     const cartRes = await makeRequest(`${apiUrl}/cart`, 'GET', authHeaders);
     console.log(`Status: ${cartRes.statusCode}`);
     console.log('Response:', JSON.stringify(cartRes.body));
 
-    // 3. POST /cart (add prod-laptop-001)
     console.log('\nTesting POST /cart (adding prod-laptop-001 with price)...');
     const addToCartRes = await makeRequest(`${apiUrl}/cart`, 'POST', authHeaders, {
         productId: 'prod-laptop-001',
@@ -91,13 +88,11 @@ async function validate() {
     console.log(`Status: ${addToCartRes.statusCode}`);
     console.log('Response:', JSON.stringify(addToCartRes.body));
 
-    // 4. Verify /cart updated
     console.log('\nVerifying GET /cart after update...');
     const cartRes2 = await makeRequest(`${apiUrl}/cart`, 'GET', authHeaders);
     console.log(`Status: ${cartRes2.statusCode}`);
     console.log('Response:', JSON.stringify(cartRes2.body));
 
-    // 5. POST /orders
     console.log('\nTesting POST /orders (checkout)...');
     const orderRes = await makeRequest(`${apiUrl}/orders`, 'POST', authHeaders, {
         items: [
@@ -119,7 +114,6 @@ async function validate() {
     const orderId = orderRes.body.orderId;
     console.log(`✅ Order placed: ${orderId}`);
 
-    // 6. Verify DynamoDB Order record exists
     console.log('\nChecking DynamoDB table for order PK=ORDER#' + orderId);
     const ddbRes = await ddbClient.send(new GetCommand({
         TableName: 'EcommerceTable',
@@ -130,7 +124,6 @@ async function validate() {
     }));
     console.log('DynamoDB Item:', JSON.stringify(ddbRes.Item));
 
-    // 7. Verify SQS Order Queue messages are processed and order status changes to processed/confirmed
     console.log('\nWaiting for OrderProcessor to process the order (polling DynamoDB status)...');
     let attempts = 0;
     let success = false;

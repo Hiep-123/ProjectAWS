@@ -1,6 +1,6 @@
 # Ecommerce Platform — AWS CDK Infrastructure
 
-Production-ready serverless ecommerce platform deployed on AWS (ap-southeast-1).
+Mô tả ngắn cho backend này: CDK deploy các stack auth, API, event và frontend lên AWS.
 
 ## Stacks
 
@@ -45,11 +45,6 @@ npx cdk deploy --all --require-approval never
 * `npm run seed:demo`       seed DynamoDB with demo products
 * `npm run seed:users`      create demo Cognito users
 
-## CI/CD — Removed from final demo scope
+## Ghi chú ngắn
 
-The CI/CD pipeline (CodePipeline + CodeBuild) was removed from the final
-submission because the AWS demo account has CodeBuild/CodePipeline quota
-limitations that prevent reliable pipeline execution.
-
-The verified deployment path is **manual CDK deployment** using the commands
-above. The application is fully AWS Well-Architected without CI/CD.
+Deployment hiện đang dùng CDK thủ công. Nếu cần thêm CI/CD thì nên làm sau khi demo ổn định.

@@ -1,8 +1,3 @@
-/**
- * Creates the demo Cognito customer account used by the workshop.
- * The ADMIN group is left in place for future extension but is not used in the current demo flow.
- */
-
 import 'dotenv/config';
 import {
     CognitoIdentityProviderClient,
@@ -16,8 +11,6 @@ import {
     CloudFormationClient,
     DescribeStacksCommand,
 } from '@aws-sdk/client-cloudformation';
-
-// ─── Region and pool resolution ───────────────────────────────────────────────
 
 const REGION =
     process.env['CDK_DEFAULT_REGION'] ??
@@ -44,11 +37,7 @@ async function resolveUserPoolId(): Promise<string> {
     return poolOutput.OutputValue;
 }
 
-// ─── Cognito client ───────────────────────────────────────────────────────────
-
 const cognito = new CognitoIdentityProviderClient({ region: REGION });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function userExists(userPoolId: string, email: string): Promise<boolean> {
     try {
@@ -91,7 +80,6 @@ async function createUser(
         return;
     }
 
-    // Create user with SUPPRESS so no welcome email is sent during demo setup
     await cognito.send(
         new AdminCreateUserCommand({
             UserPoolId: userPoolId,
@@ -106,7 +94,6 @@ async function createUser(
         }),
     );
 
-    // Set permanent password — avoids FORCE_CHANGE_PASSWORD status
     await cognito.send(
         new AdminSetUserPasswordCommand({
             UserPoolId: userPoolId,
@@ -116,7 +103,6 @@ async function createUser(
         }),
     );
 
-    // Add to group
     await cognito.send(
         new AdminAddUserToGroupCommand({
             UserPoolId: userPoolId,
@@ -127,8 +113,6 @@ async function createUser(
 
     console.log(`  ✅ Created CUSTOMER | ${email}`);
 }
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function run(): Promise<void> {
     const customerEmail = process.env['DEMO_CUSTOMER_EMAIL'];

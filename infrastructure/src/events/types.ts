@@ -1,5 +1,3 @@
-// Kiểu event dùng chung cho EventBridge
-
 export interface DomainEvent<TType extends string, TPayload> {
     readonly eventType: TType;
     readonly version: string;

@@ -1,6 +1,3 @@
-// Hàm trả response cho API Gateway Lambda
-// ALLOWED_ORIGIN phải là URL CloudFront trong production, không dùng wildcard vì có credentials
-
 const ALLOWED_ORIGIN =
     process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173';
 

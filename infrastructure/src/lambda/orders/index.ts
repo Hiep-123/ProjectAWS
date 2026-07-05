@@ -27,7 +27,6 @@ import { EVENT_BUS_NAME } from '../../events/types';
 const eb = new EventBridgeClient({});
 const eventBusName = process.env['EVENT_BUS_NAME'] ?? EVENT_BUS_NAME;
 
-// Trả 202 vì đơn hàng được xử lý bất đồng bộ
 const accepted = (data: unknown): APIGatewayProxyResult => ({
     statusCode: 202,
     headers: {
@@ -134,7 +133,6 @@ async function createOrder(
         }),
     );
 
-    // Gửi event sang EventBridge để xử lý bất đồng bộ
     const domainEvent = buildOrderCreatedEvent({
         orderId,
         userId,
@@ -180,7 +178,6 @@ async function getOrder(userId: string, orderId: string): Promise<APIGatewayProx
 
     const order = unmarshall(Item);
 
-    // Trả 404 cho cả trường hợp không tồn tại và không phải của user này (tránh lộ thông tin)
     if (order['userId'] !== userId) {
         console.warn('[OrderService] Ownership mismatch', JSON.stringify({
             requestingUser: userId,
@@ -202,7 +199,7 @@ async function listOrders(userId: string): Promise<APIGatewayProxyResult> {
                 ':pk': `USER#${userId}`,
                 ':prefix': 'ORDER#',
             }),
-            ScanIndexForward: false, // mới nhất trước
+            ScanIndexForward: false,
         }),
     );
 

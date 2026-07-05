@@ -85,7 +85,6 @@ async function addToCart(
 
     const now = new Date().toISOString();
 
-    // Dùng ADD để cộng dồn số lượng nếu item đã có trong giỏ
     const { Attributes } = await db.send(
         new UpdateItemCommand({
             TableName: TABLE_NAME,

@@ -22,7 +22,6 @@ export class ApiStack extends cdk.Stack {
 
         const userPool = cognito.UserPool.fromUserPoolId(this, 'ImportedUserPool', userPoolId);
 
-        // ALLOWED_ORIGIN phải là URL CloudFront sau khi deploy FrontendStack
         const allowedOrigin = process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173';
 
         const productLogGroup = new logs.LogGroup(this, 'ProductServiceLogs', {
@@ -70,7 +69,6 @@ export class ApiStack extends cdk.Stack {
             logGroup: productLogGroup,
         });
 
-        // Chỉ cấp GetItem + Query, không Scan
         productFn.addToRolePolicy(new iam.PolicyStatement({
             sid: 'ProductDynamoReadOnly',
             effect: iam.Effect.ALLOW,
@@ -110,8 +108,6 @@ export class ApiStack extends cdk.Stack {
             logGroup: orderLogGroup,
         });
 
-        // Đơn hàng không cần UpdateItem/DeleteItem — chỉ đọc và tạo mới
-        // GSI2 cần index/* để query lịch sử đơn hàng theo user
         orderFn.addToRolePolicy(new iam.PolicyStatement({
             sid: 'OrderDynamoReadWrite',
             effect: iam.Effect.ALLOW,
@@ -185,7 +181,6 @@ export class ApiStack extends cdk.Stack {
         const cartIntegration = new apigateway.LambdaIntegration(cartFn);
         const orderIntegration = new apigateway.LambdaIntegration(orderFn);
 
-        // /products — không cần xác thực
         const productsResource = api.root.addResource('products');
         productsResource.addMethod('GET', productIntegration, {
             authorizationType: apigateway.AuthorizationType.NONE,
@@ -196,14 +191,12 @@ export class ApiStack extends cdk.Stack {
                 authorizationType: apigateway.AuthorizationType.NONE,
             });
 
-        // /cart — yêu cầu JWT
         const cartResource = api.root.addResource('cart');
         cartResource.addMethod('GET', cartIntegration, COGNITO_AUTH);
         cartResource.addMethod('POST', cartIntegration, COGNITO_AUTH);
         cartResource.addMethod('PUT', cartIntegration, COGNITO_AUTH);
         cartResource.addResource('{productId}').addMethod('DELETE', cartIntegration, COGNITO_AUTH);
 
-        // /orders — yêu cầu JWT
         const ordersResource = api.root.addResource('orders');
         ordersResource.addMethod('POST', orderIntegration, COGNITO_AUTH);
         ordersResource.addMethod('GET', orderIntegration, COGNITO_AUTH);

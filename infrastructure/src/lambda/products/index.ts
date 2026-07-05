@@ -46,7 +46,6 @@ export const handler = async (
 };
 
 async function getProduct(slugOrId: string): Promise<APIGatewayProxyResult> {
-    // Thử tìm theo productId trước nếu path bắt đầu bằng "prod-"
     if (slugOrId.startsWith('prod-')) {
         const { Item } = await db.send(
             new GetItemCommand({
@@ -59,7 +58,6 @@ async function getProduct(slugOrId: string): Promise<APIGatewayProxyResult> {
         }
     }
 
-    // Tìm theo slug bằng cách quét GSI3
     console.log(`[ProductService] Slug lookup for: ${slugOrId}`);
     const { Items = [] } = await db.send(
         new QueryCommand({
@@ -77,7 +75,6 @@ async function getProduct(slugOrId: string): Promise<APIGatewayProxyResult> {
         return ok(found);
     }
 
-    // Thử lại với GetItem cho các id không có tiền tố "prod-"
     const { Item } = await db.send(
         new GetItemCommand({
             TableName: TABLE_NAME,
@@ -102,7 +99,6 @@ async function listProducts(options: {
     let rawItems: ProductItem[];
 
     if (category) {
-        // Lọc theo danh mục qua GSI1
         const { Items = [] } = await db.send(
             new QueryCommand({
                 TableName: TABLE_NAME,
@@ -117,7 +113,6 @@ async function listProducts(options: {
         );
         rawItems = Items.map(i => unmarshall(i) as ProductItem);
     } else {
-        // Lấy toàn bộ sản phẩm qua GSI3
         const { Items = [] } = await db.send(
             new QueryCommand({
                 TableName: TABLE_NAME,

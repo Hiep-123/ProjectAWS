@@ -1,5 +1,3 @@
-// Lấy userId từ Cognito JWT (claim "sub")
-
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 
 export class UnauthorizedError extends Error {

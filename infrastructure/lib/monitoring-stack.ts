@@ -5,42 +5,22 @@ import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as snsSubscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 
-/**
- * MonitoringStack — CloudWatch observability
- *
- * Dashboard: EcommerceDashboard (5 rows — API Gateway, EventBridge, OrderService, OrderProcessor, SQS)
- * Alarms (6): Lambda errors, Lambda throttles, DLQ depth, API Gateway 5XX
- * All resource names imported via Fn.importValue.
- */
 export class MonitoringStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Cross-stack imports
-        // ─────────────────────────────────────────────────────────────────
         const orderProcessorFnName = cdk.Fn.importValue('EcommerceOrderProcessorFunctionName');
         const orderQueueName = cdk.Fn.importValue('EcommerceOrderQueueName');
         const orderDLQName = cdk.Fn.importValue('EcommerceOrderDLQName');
         const eventBusName = cdk.Fn.importValue('EcommerceEventBusName');
 
-        // ─────────────────────────────────────────────────────────────────
-        // SNS Topic — alarm notifications
-        // ─────────────────────────────────────────────────────────────────
+        // Topic cho cảnh báo.
         const alarmTopic = new sns.Topic(this, 'AlarmsTopic', {
             topicName: 'EcommerceAlarmsTopic',
             displayName: 'Ecommerce Platform Alarms',
         });
 
-        // ── Email subscription ────────────────────────────────────────────
-        // ALERT_EMAIL is read from the environment at CDK synth/deploy time.
-        // After deployment, AWS SNS will send a confirmation email to this
-        // address. The subscriber MUST click the confirmation link — until
-        // then, SNS accepts alarm messages but does not forward them.
-        //
-        // If ALERT_EMAIL is not set, the subscription is skipped and a
-        // CDK warning is printed. Alarms still fire and the SNS topic
-        // still receives messages; they are just not delivered to email.
+        // Nếu có ALERT_EMAIL thì thêm subscription email.
         const alertEmail = process.env['ALERT_EMAIL'];
         if (alertEmail) {
             alarmTopic.addSubscription(
@@ -56,9 +36,7 @@ export class MonitoringStack extends cdk.Stack {
 
         const alarmAction = new cloudwatchActions.SnsAction(alarmTopic);
 
-        // ─────────────────────────────────────────────────────────────────
-        // Helper — typed metric factory
-        // ─────────────────────────────────────────────────────────────────
+        // Hàm tạo metric ngắn gọn.
         const lambdaMetric = (
             metricName: string,
             functionName: string | cdk.Reference,
@@ -73,11 +51,7 @@ export class MonitoringStack extends cdk.Stack {
                 period,
             });
 
-        // ─────────────────────────────────────────────────────────────────
-        // Metric definitions
-        // ─────────────────────────────────────────────────────────────────
-
-        // ── API Gateway ───────────────────────────────────────────────────
+        // Metric cho API Gateway.
         const apiRequestsMetric = new cloudwatch.Metric({
             namespace: 'AWS/ApiGateway',
             metricName: 'Count',
@@ -93,8 +67,7 @@ export class MonitoringStack extends cdk.Stack {
             period: cdk.Duration.minutes(1),
         });
 
-        // ── EventBridge ───────────────────────────────────────────────────
-        // MatchedEvents counts how many events matched the OrderCreated rule
+        // Metric cho EventBridge.
         const eventBridgeMatchedMetric = new cloudwatch.Metric({
             namespace: 'AWS/Events',
             metricName: 'MatchedEvents',
@@ -105,7 +78,6 @@ export class MonitoringStack extends cdk.Stack {
             statistic: 'Sum',
             period: cdk.Duration.minutes(1),
         });
-        // FailedInvocations on the rule = EventBridge failed to deliver to SQS
         const eventBridgeFailedMetric = new cloudwatch.Metric({
             namespace: 'AWS/Events',
             metricName: 'FailedInvocations',
@@ -117,19 +89,19 @@ export class MonitoringStack extends cdk.Stack {
             period: cdk.Duration.minutes(1),
         });
 
-        // ── OrderServiceFunction ──────────────────────────────────────────
+        // Metric cho order service.
         const orderSvcInvocations = lambdaMetric('Invocations', 'OrderServiceFunction', 'Sum');
         const orderSvcErrors = lambdaMetric('Errors', 'OrderServiceFunction', 'Sum');
         const orderSvcThrottles = lambdaMetric('Throttles', 'OrderServiceFunction', 'Sum');
         const orderSvcDuration = lambdaMetric('Duration', 'OrderServiceFunction', 'p99', cdk.Duration.minutes(5));
 
-        // ── OrderProcessorFunction ────────────────────────────────────────
+        // Metric cho processor.
         const processorInvocations = lambdaMetric('Invocations', orderProcessorFnName, 'Sum');
         const processorErrors = lambdaMetric('Errors', orderProcessorFnName, 'Sum');
         const processorThrottles = lambdaMetric('Throttles', orderProcessorFnName, 'Sum');
         const processorDuration = lambdaMetric('Duration', orderProcessorFnName, 'p99', cdk.Duration.minutes(5));
 
-        // ── SQS ───────────────────────────────────────────────────────────
+        // Metric cho queue.
         const orderQueueDepth = new cloudwatch.Metric({
             namespace: 'AWS/SQS',
             metricName: 'ApproximateNumberOfMessagesVisible',
@@ -145,15 +117,13 @@ export class MonitoringStack extends cdk.Stack {
             period: cdk.Duration.minutes(1),
         });
 
-        // ─────────────────────────────────────────────────────────────────
-        // CloudWatch Dashboard
-        // ─────────────────────────────────────────────────────────────────
+        // Dashboard CloudWatch.
         const dashboard = new cloudwatch.Dashboard(this, 'EcommerceDashboard', {
             dashboardName: 'EcommerceDashboard',
             periodOverride: cloudwatch.PeriodOverride.AUTO,
         });
 
-        // ── Row 1: API Gateway ────────────────────────────────────────────
+        // Hàng 1: API Gateway.
         dashboard.addWidgets(
             new cloudwatch.TextWidget({
                 markdown: '## API Gateway — EcommerceApi (prod)',
@@ -173,7 +143,7 @@ export class MonitoringStack extends cdk.Stack {
             }),
         );
 
-        // ── Row 2: EventBridge ────────────────────────────────────────────
+        // Hàng 2: EventBridge.
         dashboard.addWidgets(
             new cloudwatch.TextWidget({
                 markdown: '## EventBridge — EcommerceEventBus / OrderCreated rule',
@@ -193,7 +163,7 @@ export class MonitoringStack extends cdk.Stack {
             }),
         );
 
-        // ── Row 3: Lambda — OrderServiceFunction ──────────────────────────
+        // Hàng 3: Lambda order service.
         dashboard.addWidgets(
             new cloudwatch.TextWidget({
                 markdown: '## Lambda — OrderServiceFunction',
@@ -223,7 +193,7 @@ export class MonitoringStack extends cdk.Stack {
             }),
         );
 
-        // ── Row 4: Lambda — OrderProcessorFunction ────────────────────────
+        // Hàng 4: Lambda processor.
         dashboard.addWidgets(
             new cloudwatch.TextWidget({
                 markdown: '## Lambda — OrderProcessorFunction',
@@ -253,7 +223,7 @@ export class MonitoringStack extends cdk.Stack {
             }),
         );
 
-        // ── Row 5: SQS ────────────────────────────────────────────────────
+        // Hàng 5: SQS.
         dashboard.addWidgets(
             new cloudwatch.TextWidget({
                 markdown: '## SQS — OrderQueue & DLQ',
@@ -273,12 +243,7 @@ export class MonitoringStack extends cdk.Stack {
             }),
         );
 
-        // ─────────────────────────────────────────────────────────────────
-        // Alarms — all thresholds at > 0 for Errors/Throttles/DLQ,
-        //          > 5 for API 5XX (transient spikes are acceptable).
-        //          TreatMissingData=NOT_BREACHING prevents false positives
-        //          during quiet periods.
-        // ─────────────────────────────────────────────────────────────────
+        // Alarm đơn giản để bắt lỗi nổi bật.
         const makeAlarm = (
             id: string,
             name: string,

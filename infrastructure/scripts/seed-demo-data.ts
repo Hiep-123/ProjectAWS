@@ -1,20 +1,3 @@
-/**
- * Seeds the demo product catalog into DynamoDB.
- * Re-running the script safely overwrites the same items.
- *
- * Single-table schema:
- *   PK  = PRODUCT#{productId}
- *   SK  = METADATA
- *   GSI1PK = CATEGORY#{category}   (product search by category)
- *   GSI1SK = PRODUCT#{productId}
- *   GSI3PK = PRODUCT               (all products scan-equivalent via GSI)
- *   GSI3SK = NAME#{normalizedName}
- *
- * Usage:
- *   TABLE_NAME=EcommerceTable CDK_DEFAULT_REGION=ap-southeast-1 npm run seed:demo
- *   or simply: npm run seed:demo   (reads from .env via dotenv/config)
- */
-
 import 'dotenv/config';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
@@ -22,8 +5,6 @@ import {
     CloudFormationClient,
     DescribeStacksCommand,
 } from '@aws-sdk/client-cloudformation';
-
-// ─── Region and table resolution ─────────────────────────────────────────────
 
 const REGION =
     process.env['CDK_DEFAULT_REGION'] ??
@@ -52,14 +33,10 @@ async function resolveTableName(): Promise<string> {
     return tableNameOutput.OutputValue;
 }
 
-// ─── DynamoDB client ──────────────────────────────────────────────────────────
-
 const dynamo = DynamoDBDocumentClient.from(
     new DynamoDBClient({ region: REGION }),
     { marshallOptions: { removeUndefinedValues: true } },
 );
-
-// ─── Product definitions ──────────────────────────────────────────────────────
 
 const now = new Date().toISOString();
 
@@ -67,7 +44,6 @@ function normalize(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-/** Generate a URL-friendly slug from the product name. */
 function toSlug(name: string): string {
     return normalize(name);
 }
@@ -215,8 +191,6 @@ const PRODUCTS: ProductSeed[] = [
     },
 ];
 
-// ─── Seed function ────────────────────────────────────────────────────────────
-
 async function seed(): Promise<void> {
     const tableName = await resolveTableName();
     console.log(`\n🌱 Seeding table: ${tableName} (region: ${REGION})\n`);
@@ -226,19 +200,15 @@ async function seed(): Promise<void> {
 
     for (const product of PRODUCTS) {
         const item = {
-            // Primary key
             PK: `PRODUCT#${product.productId}`,
             SK: 'METADATA',
 
-            // GSI1 — product search by category
             GSI1PK: `CATEGORY#${product.category}`,
             GSI1SK: `PRODUCT#${product.productId}`,
 
-            // GSI3 — all products listing
             GSI3PK: 'PRODUCT',
             GSI3SK: `NAME#${normalize(product.name)}`,
 
-            // Application attributes
             productId: product.productId,
             name: product.name,
             description: product.description,
@@ -246,9 +216,6 @@ async function seed(): Promise<void> {
             price: product.price,
             stock: product.stock,
             imageUrl: product.imageUrl,
-            // Slug for user-friendly URLs — derived from the product name.
-            // e.g. "ProBook X15 Laptop" → "probook-x15-laptop"
-            // GET /products/{slug} in the Lambda resolves this to the full item.
             slug: toSlug(product.name),
             status: product.status,
             createdAt: now,

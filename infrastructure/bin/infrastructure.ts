@@ -17,16 +17,13 @@ const env: cdk.Environment = {
   region: process.env.CDK_DEFAULT_REGION,
 };
 
-// AuthStack — Cognito User Pool, Client, Groups
-// Deployed: ap-southeast-1_dOmrwNnTw
-// Deploy:   cdk deploy AuthStack
+// Stack cho auth
 const authStack = new AuthStack(app, 'AuthStack', {
   env,
   description: 'Ecommerce platform — Cognito authentication (User Pool, Client, Groups)',
 });
 
-// DatabaseStack — DynamoDB single-table design (EcommerceTable)
-// Deploy: cdk deploy DatabaseStack
+// Stack cho database
 const databaseStack = new DatabaseStack(app, 'DatabaseStack', {
   env,
   description: 'Ecommerce platform — DynamoDB single table (EcommerceTable)',
@@ -34,8 +31,7 @@ const databaseStack = new DatabaseStack(app, 'DatabaseStack', {
 
 databaseStack.addDependency(authStack);
 
-// EventStack — EventBridge bus, SQS OrderQueue + DLQ, OrderProcessorFunction
-// Deploy: cdk deploy EventStack
+// Stack cho event và queue
 const eventStack = new EventStack(app, 'EventStack', {
   env,
   description: 'Ecommerce platform — EventBridge, SQS, OrderProcessor Lambda',
@@ -43,9 +39,7 @@ const eventStack = new EventStack(app, 'EventStack', {
 
 eventStack.addDependency(databaseStack);
 
-// ApiStack — REST API Gateway + Lambda services
-// Depends on EventStack for EcommerceEventBusArn (OrderService PutEvents)
-// Deploy: cdk deploy ApiStack
+// Stack cho API Gateway và Lambda
 const apiStack = new ApiStack(app, 'ApiStack', {
   env,
   description: 'Ecommerce platform — API Gateway + Lambda (Products, Cart, Orders)',
@@ -54,8 +48,7 @@ const apiStack = new ApiStack(app, 'ApiStack', {
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(eventStack);
 
-// MonitoringStack — CloudWatch Dashboard + Alarms + SNS
-// Deploy: cdk deploy MonitoringStack
+// Stack cho monitoring
 const monitoringStack = new MonitoringStack(app, 'MonitoringStack', {
   env,
   description: 'Ecommerce platform — CloudWatch Dashboard, Alarms, SNS notifications',
@@ -64,10 +57,7 @@ const monitoringStack = new MonitoringStack(app, 'MonitoringStack', {
 monitoringStack.addDependency(eventStack);
 monitoringStack.addDependency(apiStack);
 
-// SecurityStack — WAF v2 WebACL (CloudFront-scoped, must be us-east-1)
-// NOTE: Deploy SecurityStack BEFORE FrontendStack — FrontendStack imports
-//       EcommerceWafWebAclArn from this stack. WAF for CloudFront requires us-east-1.
-// Deploy: cdk deploy SecurityStack
+// Stack cho WAF
 const securityStack = new SecurityStack(app, 'SecurityStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -76,20 +66,17 @@ const securityStack = new SecurityStack(app, 'SecurityStack', {
   description: 'Ecommerce platform — WAF v2 WebACL for CloudFront',
 });
 
-// FrontendStack — S3 + CloudFront SPA deployment
-// Deploy: cdk deploy FrontendStack
+// Stack cho frontend
 const frontendStack = new FrontendStack(app, 'FrontendStack', {
   env,
   description: 'Ecommerce platform — S3 + CloudFront (React 19 SPA)',
   wafWebAclArn: process.env.WAF_WEB_ACL_ARN,
 });
 
-// FrontendStack imports EcommerceApiUrl (ApiStack) + WAF ARN (SecurityStack)
 frontendStack.addDependency(apiStack);
 frontendStack.addDependency(securityStack);
 
-// InfrastructureStack — Orchestration placeholder (no resources)
-// Deploy: cdk deploy InfrastructureStack
+// Stack tổng hợp
 const infraStack = new InfrastructureStack(app, 'InfrastructureStack', {
   env,
   description: 'Ecommerce platform — Core infrastructure orchestration',
