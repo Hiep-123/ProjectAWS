@@ -51,46 +51,6 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Trending Products */}
-            <section className="container mx-auto px-4">
-                <h2 className="text-2xl font-bold mb-6">Trending Products</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {trending ? (
-                        trending.slice(0, 4).map(product => (
-                            <Link key={product.id} to={productHref(product)}>
-                                <Card className="hover:border-primary transition-colors overflow-hidden">
-                                    <div className="h-48 bg-muted overflow-hidden">
-                                        <img
-                                            src={product.image}
-                                            alt={product.name}
-                                            className="w-full h-full object-cover hover:scale-105 transition-transform"
-                                        />
-                                    </div>
-                                    <CardContent className="p-4 space-y-2">
-                                        <h3 className="font-semibold line-clamp-2 text-sm">
-                                            {product.name}
-                                        </h3>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-lg font-bold text-primary">
-                                                ${product.price.toFixed(2)}
-                                            </span>
-                                            <div className="flex items-center gap-1">
-                                                <Star className="w-4 h-4 fill-primary text-primary" />
-                                                <span className="text-sm">{product.rating}</span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))
-                    ) : (
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <Skeleton key={i} className="h-80" />
-                        ))
-                    )}
-                </div>
-            </section>
-
             {/* Best Sellers */}
             <section className="container mx-auto px-4">
                 <h2 className="text-2xl font-bold mb-6">Best Sellers</h2>
