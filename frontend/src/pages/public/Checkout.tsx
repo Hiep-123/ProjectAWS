@@ -10,6 +10,7 @@ import PageHeader from '@components/shared/PageHeader'
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Separator, Label } from '@components/ui'
 import { Truck, CreditCard, ShoppingBag, ArrowLeft } from 'lucide-react'
 import { formatCurrency } from '@lib/utils'
+import { api } from '@lib'
 
 const checkoutSchema = z.object({
     shippingName: z.string().min(2, 'Full name is required'),
@@ -31,7 +32,7 @@ const checkoutSchema = z.object({
     billingPhone: z.string().optional(),
 
     deliveryMethod: z.enum(['standard', 'express', 'overnight']),
-    paymentMethod: z.enum(['credit_card', 'paypal', 'bank_transfer']),
+    paymentMethod: z.enum(['credit_card', 'paypal', 'bank_transfer', 'vnpay']),
     cardNumber: z.string().regex(/^\d{16}$/, 'Must be a valid 16-digit card number').optional().or(z.literal('')),
     cardExpiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Format MM/YY').optional().or(z.literal('')),
     cardCvv: z.string().regex(/^\d{3,4}$/, '3 or 4 digits').optional().or(z.literal('')),
@@ -119,16 +120,35 @@ const CheckoutPage: React.FC = () => {
                 shippingAddress,
                 billingAddress,
                 deliveryMethod: values.deliveryMethod,
-                paymentMethod: values.paymentMethod === 'credit_card' ? 'credit_card' : 'paypal',
+                paymentMethod: values.paymentMethod,
                 couponCode,
             },
             {
-                onSuccess: (newOrder: any) => {
+                onSuccess: async (newOrder: any) => {
                     toast({
                         title: 'Order Placed!',
                         description: `Your order ${newOrder.id} has been created successfully.`,
                     })
                     clearCart()
+
+                    if (values.paymentMethod === 'vnpay') {
+                        try {
+                            const response = await api.post<{ paymentUrl: string }>('/payments/vnpay-url', {
+                                orderId: newOrder.id,
+                            })
+                            if (response.data?.paymentUrl) {
+                                window.location.href = response.data.paymentUrl
+                                return
+                            }
+                        } catch (err: any) {
+                            toast({
+                                title: 'VNPay Redirection Failed',
+                                description: err.message || 'Could not initiate payment. Please try again from Order details.',
+                                variant: 'destructive',
+                            })
+                        }
+                    }
+
                     navigate(`/orders/${newOrder.id}`)
                 },
                 onError: (err) => {
@@ -269,7 +289,7 @@ const CheckoutPage: React.FC = () => {
                             <CardTitle className="text-lg font-bold">Payment Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex gap-4">
+                            <div className="flex flex-col md:flex-row gap-4">
                                 <label className="flex items-center gap-2 border rounded-md p-3 px-4 cursor-pointer hover:bg-muted/50 flex-1 justify-center">
                                     <input type="radio" value="credit_card" {...register('paymentMethod')} className="accent-primary" />
                                     <span className="text-sm font-semibold">Credit Card</span>
@@ -277,6 +297,10 @@ const CheckoutPage: React.FC = () => {
                                 <label className="flex items-center gap-2 border rounded-md p-3 px-4 cursor-pointer hover:bg-muted/50 flex-1 justify-center">
                                     <input type="radio" value="paypal" {...register('paymentMethod')} className="accent-primary" />
                                     <span className="text-sm font-semibold">PayPal</span>
+                                </label>
+                                <label className="flex items-center gap-2 border rounded-md p-3 px-4 cursor-pointer hover:bg-muted/50 flex-1 justify-center">
+                                    <input type="radio" value="vnpay" {...register('paymentMethod')} className="accent-primary" />
+                                    <span className="text-sm font-semibold text-primary">VNPay</span>
                                 </label>
                             </div>
 
@@ -309,6 +333,12 @@ const CheckoutPage: React.FC = () => {
                             {watchPaymentMethod === 'paypal' && (
                                 <div className="p-4 bg-muted/30 border border-dashed rounded-lg text-center text-xs text-muted-foreground">
                                     You will be redirected to PayPal's secure portal to authorize payment after clicking Place Order.
+                                </div>
+                            )}
+
+                            {watchPaymentMethod === 'vnpay' && (
+                                <div className="p-4 bg-muted/30 border border-dashed rounded-lg text-center text-xs text-muted-foreground">
+                                    You will be redirected to VNPay's secure gateway to complete payment after clicking Place Order.
                                 </div>
                             )}
                         </CardContent>

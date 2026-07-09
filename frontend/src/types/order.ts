@@ -33,7 +33,7 @@ export interface Order {
     shippingAddress: Address
     billingAddress: Address
     deliveryMethod: 'standard' | 'express' | 'overnight'
-    paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer'
+    paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer' | 'vnpay'
     createdAt: string
     updatedAt: string
     estimatedDelivery?: string
@@ -59,7 +59,7 @@ export interface Checkout {
     shippingAddress: Address
     billingAddress: Address
     deliveryMethod: 'standard' | 'express' | 'overnight'
-    paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer'
+    paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer' | 'vnpay'
     couponCode?: string
 }
 

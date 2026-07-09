@@ -77,6 +77,9 @@ async function createOrder(
     let body: {
         items: Array<{ productId: string; quantity: number; price: number }>;
         shippingAddress: string;
+        paymentMethod?: string;
+        deliveryMethod?: 'standard' | 'express' | 'overnight';
+        couponCode?: string;
     };
 
     try {
@@ -85,7 +88,7 @@ async function createOrder(
         return badRequest('Invalid JSON body');
     }
 
-    const { items, shippingAddress } = body;
+    const { items, shippingAddress, paymentMethod, deliveryMethod, couponCode } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
         return badRequest('items array is required and must not be empty');
@@ -108,12 +111,25 @@ async function createOrder(
 
     const orderId = randomUUID();
     const now = new Date().toISOString();
-    const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    
+    // Unify pricing calculation with frontend: total = subtotal + tax + shipping - discount
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const tax = Math.round(subtotal * 0.08 * 100) / 100; // 8% TAX_RATE
+    
+    let shippingCost = 0;
+    if (deliveryMethod === 'express') {
+        shippingCost = 24.99;
+    } else if (deliveryMethod === 'overnight') {
+        shippingCost = 49.99;
+    }
+    
+    const discount = couponCode ? 10 : 0; // Mock discount matches frontend CartContext
+    const totalAmount = Math.max(0, Math.round((subtotal + tax + shippingCost - discount) * 100) / 100);
 
     const order = {
         PK: `ORDER#${orderId}`,
         SK: 'METADATA',
-        GSI2PK: `USER#${userId}`,
+        GSI2PK: `USER#${userId}`, // GSI2 keys prefix
         GSI2SK: `ORDER#${now}`,
         orderId,
         userId,
@@ -121,6 +137,8 @@ async function createOrder(
         shippingAddress,
         totalAmount,
         status: 'PENDING',
+        paymentMethod: paymentMethod || 'credit_card',
+        paymentStatus: paymentMethod === 'vnpay' ? 'UNPAID' : 'PAID',
         createdAt: now,
         updatedAt: now,
     };
@@ -133,29 +151,33 @@ async function createOrder(
         }),
     );
 
-    const domainEvent = buildOrderCreatedEvent({
-        orderId,
-        userId,
-        items,
-        shippingAddress,
-        totalAmount,
-        createdAt: now,
-    });
+    if (paymentMethod !== 'vnpay') {
+        const domainEvent = buildOrderCreatedEvent({
+            orderId,
+            userId,
+            items,
+            shippingAddress,
+            totalAmount,
+            createdAt: now,
+        });
 
-    await eb.send(
-        new PutEventsCommand({
-            Entries: [
-                {
-                    EventBusName: eventBusName,
-                    Source: 'ecommerce.orders',
-                    DetailType: 'OrderCreated',
-                    Detail: JSON.stringify(domainEvent),
-                },
-            ],
-        }),
-    );
+        await eb.send(
+            new PutEventsCommand({
+                Entries: [
+                    {
+                        EventBusName: eventBusName,
+                        Source: 'ecommerce.orders',
+                        DetailType: 'OrderCreated',
+                        Detail: JSON.stringify(domainEvent),
+                    },
+                ],
+            }),
+        );
 
-    console.log('[OrderService] OrderCreated event published', JSON.stringify({ orderId }));
+        console.log('[OrderService] OrderCreated event published', JSON.stringify({ orderId }));
+    } else {
+        console.log('[OrderService] OrderCreated event deferred for VNPay payment', JSON.stringify({ orderId }));
+    }
 
     return accepted({
         message: 'Order accepted for processing',

@@ -6,6 +6,7 @@ import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as path from 'path';
 import 'dotenv/config';
 
@@ -24,6 +25,21 @@ export class ApiStack extends cdk.Stack {
 
         const allowedOrigin = process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173';
 
+        // VNPay Secrets Manager config
+        const vnpaySecret = new secretsmanager.Secret(this, 'VNPaySecret', {
+            secretName: 'VNPayConfig',
+            description: 'VNPay Integration Credentials',
+            generateSecretString: {
+                secretStringTemplate: JSON.stringify({
+                    VNP_TMN_CODE: process.env['VNP_TMN_CODE'] ?? 'placeholder_tmn_code',
+                    VNP_HASH_SECRET: process.env['VNP_HASH_SECRET'] ?? 'placeholder_hash_secret',
+                    VNP_URL: process.env['VNP_URL'] ?? 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+                    VNP_RETURN_URL: `${allowedOrigin}/payment/vnpay-return`,
+                }),
+                generateStringKey: 'dummy',
+            },
+        });
+
         const productLogGroup = new logs.LogGroup(this, 'ProductServiceLogs', {
             logGroupName: '/aws/lambda/ProductServiceFunction',
             retention: logs.RetentionDays.ONE_MONTH,
@@ -36,6 +52,12 @@ export class ApiStack extends cdk.Stack {
         });
         const orderLogGroup = new logs.LogGroup(this, 'OrderServiceLogs', {
             logGroupName: '/aws/lambda/OrderServiceFunction',
+            retention: logs.RetentionDays.ONE_MONTH,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        const paymentLogGroup = new logs.LogGroup(this, 'PaymentServiceLogs', {
+            logGroupName: '/aws/lambda/PaymentServiceFunction',
             retention: logs.RetentionDays.ONE_MONTH,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -122,6 +144,35 @@ export class ApiStack extends cdk.Stack {
             resources: [eventBusArn],
         }));
 
+        const paymentFn = new lambdaNodejs.NodejsFunction(this, 'PaymentServiceFunction', {
+            ...lambdaDefaults,
+            functionName: 'PaymentServiceFunction',
+            description: 'POST /payments/vnpay-url & GET /payments/vnpay-ipn — payment processing',
+            entry: path.join(__dirname, '../src/lambda/payments/index.ts'),
+            handler: 'handler',
+            logGroup: paymentLogGroup,
+            environment: {
+                ...lambdaDefaults.environment,
+                VNP_SECRET_ARN: vnpaySecret.secretArn,
+            },
+        });
+
+        vnpaySecret.grantRead(paymentFn);
+
+        paymentFn.addToRolePolicy(new iam.PolicyStatement({
+            sid: 'PaymentDynamoReadWrite',
+            effect: iam.Effect.ALLOW,
+            actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+            resources: [tableArn],
+        }));
+
+        paymentFn.addToRolePolicy(new iam.PolicyStatement({
+            sid: 'PaymentEventBridgePutEvents',
+            effect: iam.Effect.ALLOW,
+            actions: ['events:PutEvents'],
+            resources: [eventBusArn],
+        }));
+
         const accessLogGroup = new logs.LogGroup(this, 'ApiAccessLogs', {
             logGroupName: '/aws/apigateway/EcommerceApi',
             retention: logs.RetentionDays.ONE_MONTH,
@@ -180,6 +231,7 @@ export class ApiStack extends cdk.Stack {
         const productIntegration = new apigateway.LambdaIntegration(productFn);
         const cartIntegration = new apigateway.LambdaIntegration(cartFn);
         const orderIntegration = new apigateway.LambdaIntegration(orderFn);
+        const paymentIntegration = new apigateway.LambdaIntegration(paymentFn);
 
         const productsResource = api.root.addResource('products');
         productsResource.addMethod('GET', productIntegration, {
@@ -201,6 +253,13 @@ export class ApiStack extends cdk.Stack {
         ordersResource.addMethod('POST', orderIntegration, COGNITO_AUTH);
         ordersResource.addMethod('GET', orderIntegration, COGNITO_AUTH);
         ordersResource.addResource('{id}').addMethod('GET', orderIntegration, COGNITO_AUTH);
+
+        const paymentsResource = api.root.addResource('payments');
+        paymentsResource.addResource('vnpay-url').addMethod('POST', paymentIntegration, COGNITO_AUTH);
+        paymentsResource.addResource('vnpay-verify').addMethod('POST', paymentIntegration, COGNITO_AUTH);
+        paymentsResource.addResource('vnpay-ipn').addMethod('GET', paymentIntegration, {
+            authorizationType: apigateway.AuthorizationType.NONE,
+        });
 
         this.apiUrl = api.url;
 

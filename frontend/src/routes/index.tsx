@@ -19,6 +19,7 @@ import Orders from '@pages/public/Orders'
 import OrderDetail from '@pages/public/OrderDetail'
 import Profile from '@pages/public/Profile'
 import Recommendations from '@pages/public/Recommendations'
+import VnpayReturn from '@pages/public/VnpayReturn'
 
 // Auth Pages
 import Login from '@pages/auth/Login'
@@ -44,6 +45,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<ProtectedRoute element={<Checkout />} />} />
+                <Route path="/payment/vnpay-return" element={<ProtectedRoute element={<VnpayReturn />} />} />
                 <Route path="/orders" element={<ProtectedRoute element={<Orders />} />} />
                 <Route path="/orders/:id" element={<ProtectedRoute element={<OrderDetail />} />} />
                 <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />

@@ -226,6 +226,7 @@ export const orderService = {
                         checkout.shippingAddress.postalCode,
                         checkout.shippingAddress.country,
                     ].join(', '),
+            paymentMethod: checkout.paymentMethod,
         }
 
         // Step 1: POST /orders → 202 { message, orderId, status: 'PENDING' }
