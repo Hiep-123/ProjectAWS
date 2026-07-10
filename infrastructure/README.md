@@ -6,7 +6,7 @@ Mô tả ngắn cho backend này: CDK deploy các stack auth, API, event và fro
 
 | Stack | Description |
 |-------|-------------|
-| AuthStack | Cognito User Pool, Client, CUSTOMER/ADMIN groups |
+| AuthStack | Cognito User Pool, Client, and CUSTOMER group |
 | DatabaseStack | DynamoDB single-table design (EcommerceTable) |
 | EventStack | EventBridge custom bus, SQS OrderQueue + DLQ, OrderProcessorFunction |
 | ApiStack | REST API Gateway + Lambda (Products, Cart, Orders) |

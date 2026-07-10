@@ -41,12 +41,6 @@ export class AuthStack extends cdk.Stack {
       description: 'Customer users',
     });
 
-    new cognito.CfnUserPoolGroup(this, 'AdminGroup', {
-      userPoolId: this.userPool.userPoolId,
-      groupName: 'ADMIN',
-      description: 'Administrator users',
-    });
-
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.userPool.userPoolId,
       description: 'Cognito User Pool Id',

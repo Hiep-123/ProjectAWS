@@ -2,7 +2,7 @@
 
 A production-ready E-Commerce Platform frontend built with React 19, TypeScript, and Vite. Designed for AWS Serverless Architecture following the AWS Well-Architected Framework principles.
 
-## 🏗️ Architecture
+## Architecture
 
 - **Clean Architecture** with Feature-Based Structure
 - **AWS Serverless Ready** - Compatible with API Gateway, Lambda, DynamoDB, Cognito, EventBridge, SQS, SNS

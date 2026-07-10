@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import {
     CognitoIdentityProviderClient,
-    AdminCreateUserCommand,
-    AdminSetUserPasswordCommand,
-    AdminAddUserToGroupCommand,
-    AdminGetUserCommand,
+    AdminCreateUserCommand as CreateUserCommand,
+    AdminSetUserPasswordCommand as SetUserPasswordCommand,
+    AdminAddUserToGroupCommand as AddUserToGroupCommand,
+    AdminGetUserCommand as GetUserCommand,
     MessageActionType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import {
@@ -42,7 +42,7 @@ const cognito = new CognitoIdentityProviderClient({ region: REGION });
 async function userExists(userPoolId: string, email: string): Promise<boolean> {
     try {
         await cognito.send(
-            new AdminGetUserCommand({
+            new GetUserCommand({
                 UserPoolId: userPoolId,
                 Username: email,
             }),
@@ -67,7 +67,7 @@ async function createUser(
         // Still ensure group membership
         try {
             await cognito.send(
-                new AdminAddUserToGroupCommand({
+                new AddUserToGroupCommand({
                     UserPoolId: userPoolId,
                     Username: email,
                     GroupName: 'CUSTOMER',
@@ -81,7 +81,7 @@ async function createUser(
     }
 
     await cognito.send(
-        new AdminCreateUserCommand({
+        new CreateUserCommand({
             UserPoolId: userPoolId,
             Username: email,
             UserAttributes: [
@@ -95,7 +95,7 @@ async function createUser(
     );
 
     await cognito.send(
-        new AdminSetUserPasswordCommand({
+        new SetUserPasswordCommand({
             UserPoolId: userPoolId,
             Username: email,
             Password: password,
@@ -104,7 +104,7 @@ async function createUser(
     );
 
     await cognito.send(
-        new AdminAddUserToGroupCommand({
+        new AddUserToGroupCommand({
             UserPoolId: userPoolId,
             Username: email,
             GroupName: 'CUSTOMER',
@@ -126,7 +126,7 @@ async function run(): Promise<void> {
         console.log('Set these variables in infrastructure/.env and re-run npm run seed:users:\n');
         console.log('  DEMO_CUSTOMER_EMAIL=customer@demo.com');
         console.log('  DEMO_CUSTOMER_PASSWORD=<strong-password>\n');
-        console.log('Or create users manually:\n');
+        console.log('Or create the user manually:\n');
         console.log('  # After AuthStack deploy, get the pool ID:');
         console.log('  POOL_ID=$(aws cloudformation describe-stacks \\');
         console.log('    --stack-name AuthStack --region ap-southeast-1 \\');

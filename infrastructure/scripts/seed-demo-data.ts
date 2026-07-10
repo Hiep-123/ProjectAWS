@@ -230,15 +230,15 @@ async function seed(): Promise<void> {
                     // No condition — idempotent upsert overwrites if same PK/SK exists
                 }),
             );
-            console.log(`  ✅ ${product.productId.padEnd(22)} | ${product.name}`);
+            console.log(`  ${product.productId.padEnd(22)} | ${product.name}`);
             success++;
         } catch (err) {
-            console.error(`  ❌ ${product.productId} — ${(err as Error).message}`);
+            console.error(`  ${product.productId} — ${(err as Error).message}`);
             failed++;
         }
     }
 
-    console.log(`\n📊 Seed complete: ${success} succeeded, ${failed} failed out of ${PRODUCTS.length} products.\n`);
+    console.log(`\nSeed complete: ${success} succeeded, ${failed} failed out of ${PRODUCTS.length} products.\n`);
 
     if (failed > 0) {
         process.exit(1);
@@ -246,6 +246,6 @@ async function seed(): Promise<void> {
 }
 
 seed().catch((err) => {
-    console.error('\n❌ Seed script failed:', err);
+    console.error('\nSeed script failed:', err);
     process.exit(1);
 });
