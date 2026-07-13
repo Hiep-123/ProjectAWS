@@ -75,7 +75,7 @@ async function createOrder(
     if (!rawBody) return badRequest('Request body is required');
 
     let body: {
-        items: Array<{ productId: string; quantity: number; price: number }>;
+        items: Array<{ productId: string; productName?: string; quantity: number; price: number }>;
         shippingAddress: string;
         paymentMethod?: string;
         deliveryMethod?: 'standard' | 'express' | 'overnight';

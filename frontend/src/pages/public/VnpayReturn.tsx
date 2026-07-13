@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import { Button, Card, CardContent } from '@components/ui'
 import { formatCurrency } from '@lib/utils'
 import { api } from '@lib'
+import { useOrder } from '@hooks/queries/useOrders'
 
 const VnpayReturn: React.FC = () => {
     const [searchParams] = useSearchParams()
@@ -15,6 +16,9 @@ const VnpayReturn: React.FC = () => {
     const amountRaw = searchParams.get('vnp_Amount')
     const exchangeRate = 25000
     const amount = amountRaw ? (Number(amountRaw) / 100) / exchangeRate : 0
+
+    // Fetch order details to display the product name
+    const { data: order, isLoading: orderLoading } = useOrder(orderId || undefined)
 
     useEffect(() => {
         const verify = async () => {
@@ -72,6 +76,23 @@ const VnpayReturn: React.FC = () => {
 
                             {orderId && (
                                 <div className="bg-muted/50 p-4 rounded-xl text-left text-xs space-y-2 border border-border/20">
+                                    <div className="flex flex-col gap-1 border-b border-border/10 pb-2 mb-1">
+                                        <span className="text-muted-foreground font-semibold">Items:</span>
+                                        {orderLoading ? (
+                                            <span className="text-muted-foreground animate-pulse">Loading items...</span>
+                                        ) : order?.items && order.items.length > 0 ? (
+                                            <div className="space-y-1">
+                                                {order.items.map((item, idx) => (
+                                                    <div key={item.productId || idx} className="flex justify-between text-foreground font-semibold">
+                                                        <span className="line-clamp-1">{item.productName || item.productId}</span>
+                                                        <span className="text-muted-foreground shrink-0 ml-2">× {item.quantity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground">Order Items</span>
+                                        )}
+                                    </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Order ID:</span>
                                         <span className="font-mono font-semibold text-foreground">{orderId}</span>
@@ -111,6 +132,23 @@ const VnpayReturn: React.FC = () => {
 
                             {orderId && (
                                 <div className="bg-muted/50 p-4 rounded-xl text-left text-xs space-y-2 border border-border/20">
+                                    <div className="flex flex-col gap-1 border-b border-border/10 pb-2 mb-1">
+                                        <span className="text-muted-foreground font-semibold">Items:</span>
+                                        {orderLoading ? (
+                                            <span className="text-muted-foreground animate-pulse">Loading items...</span>
+                                        ) : order?.items && order.items.length > 0 ? (
+                                            <div className="space-y-1">
+                                                {order.items.map((item, idx) => (
+                                                    <div key={item.productId || idx} className="flex justify-between text-foreground font-semibold">
+                                                        <span className="line-clamp-1">{item.productName || item.productId}</span>
+                                                        <span className="text-muted-foreground shrink-0 ml-2">× {item.quantity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground">Order Items</span>
+                                        )}
+                                    </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Order ID:</span>
                                         <span className="font-mono font-semibold text-foreground">{orderId}</span>

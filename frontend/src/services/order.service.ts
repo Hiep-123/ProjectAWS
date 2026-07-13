@@ -38,7 +38,7 @@ const simulateDelay = () =>
 interface LambdaOrder {
     orderId: string
     userId: string
-    items: Array<{ productId: string; quantity: number; price: number }>
+    items: Array<{ productId: string; productName?: string; quantity: number; price: number }>
     shippingAddress: string
     totalAmount: number
     status: string
@@ -58,7 +58,7 @@ const toOrder = (raw: LambdaOrder): Order => ({
     userId: raw.userId,
     items: raw.items.map(i => ({
         productId: i.productId,
-        productName: i.productId,
+        productName: i.productName || i.productId,
         price: i.price,
         quantity: i.quantity,
         total: i.price * i.quantity,
@@ -213,6 +213,7 @@ export const orderService = {
         const payload = {
             items: checkout.items.map((i: any) => ({
                 productId: i.productId,
+                productName: i.productName,
                 quantity: i.quantity,
                 price: i.price,
             })),
